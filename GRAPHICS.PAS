@@ -21,7 +21,7 @@ function getpixel(x, y: integer): integer;
 function pushrgb(x, y: integer; r, g, b: byte): integer {
     sets color of pixel at `x` and `y` using given R, G, B values
 };
-procedure savergb(x, y: integer; var rgb_value: RGB_record) {
+function savergb(x, y: integer; var rgb_value: RGB_record): integer {
     stores R, G, B values of pixel at `x` and `y` in variable `rgb_value`
 };
 
@@ -173,22 +173,20 @@ begin
         pushrgb := -1;
 end;
 
-procedure savergb(x, y: integer; var rgb_value: RGB_record) {
-    Stores R, G, B values of pixel at `x` and `y`
-    in variable `rgb_value`
+function savergb(x, y: integer; var rgb_value: RGB_record): integer {
+    Stores R, G, B values of pixel at `x` and `y` in variable `rgb_value`;
+    returns 1 on success, -1 if `x` or `y` are out of screen bounds
 };
 var color: integer;
 begin
     color := getpixel(x, y);
-    if (color < 0) or (color > 255) then begin
-        rgb_value.r := 0;
-        rgb_value.g := 0;
-        rgb_value.b := 0;
-    end
+    if (color < 0) or (color > 255) then
+        savergb := -1
     else begin
         rgb_value.r := color div 36;
         rgb_value.g := (color mod 36) div 6;
         rgb_value.b := color mod 6;
+        savergb := 1;
     end;
 end;
 
