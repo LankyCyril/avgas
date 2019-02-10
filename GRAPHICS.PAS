@@ -11,8 +11,8 @@ implementation
 
 uses dos;
 
-type  vga_array = array[0..getmaxy, 0..getmaxx] of byte;
-var   screen_array: vga_array absolute $A000:$0000;
+type  VgaArray = array[0..getmaxy, 0..getmaxx] of byte;
+var   screen_array: VgaArray absolute $A000:$0000;
 
 procedure graphmode(boolstate: boolean);
 { graphmode(true) enters 320x240x256 graphics mode }
