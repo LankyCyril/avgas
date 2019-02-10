@@ -14,10 +14,10 @@ procedure graphmode(boolstate: boolean) {
     graphmode(true) enters 320x200x216 graphics mode;
     graphmode(false) returns to text mode and restores default VGA palette
 };
-function pushrgb(x, y: integer; r, g, b: byte): integer {
+function putrgb(x, y: integer; r, g, b: byte): boolean {
     sets color of pixel at `x` and `y` using given R, G, B values
 };
-function savergb(x, y: integer; var r, g, b: byte): integer {
+function getrgb(x, y: integer; var r, g, b: byte): boolean {
     pushes R, G, B values of pixel at `x` and `y` into `r`, `g`, and `b`
 };
 
@@ -57,16 +57,6 @@ begin
          dx := ofs(palette);
     end;
     intr($10, reg);
-end;
-
-function rgb(r, g, b: byte): integer {
-    Converts R, G, B to color number; returns -1 if values out of bounds
-};
-begin
-    if (r > 5) or (g > 5) or (b > 5) then
-        rgb := -1
-    else
-        rgb := r*36 + g*6 + b;
 end;
 
 procedure set216palette {
@@ -116,56 +106,41 @@ begin
     );
 end;
 
-function putpixel(x, y: integer; color: byte): integer {
-    puts pixel at `x` and `y` using color from current palette;
-    returns 1 on success, -1 if `x` or `y` are out of screen bounds
+function putrgb(x, y: integer; r, g, b: byte): boolean {
+    Sets color of pixel at `x` and `y` using given R, G, B values;
+    returns boolean value of success
 };
+var rgb: integer;
 begin
+    putrgb := false;
     if are_valid_coords(x, y) then begin
-        screen_array[y, x] := color;
-        putpixel := 1;
-    end
-    else
-        putpixel := -1;
+        if (r > 5) or (g > 5) or (b > 5) then
+            rgb := -1
+        else
+            rgb := r*36 + g*6 + b;
+        if rgb <> -1 then begin
+            screen_array[y, x] := rgb;
+            putrgb := true;
+        end;
+    end;
 end;
 
-function getpixel(x, y: integer): integer {
-    gets color code of pixel at `x` and `y`;
-    returns color code (from 0 to 255) on success,
-    -1 if `x` or `y` are out of screen bounds
+function getrgb(x, y: integer; var r, g, b: byte): boolean {
+    Pushes R, G, B values of pixel at `x` and `y` into `r`, `g`, and `b`;
+    returns boolean value of success
 };
+var color: integer;
 begin
     if are_valid_coords(x, y) then
-        getpixel := screen_array[y, x]
+        color := screen_array[y, x]
     else
-        getpixel := -1;
-end;
-
-function pushrgb(x, y: integer; r, g, b: byte): integer {
-    Sets color of pixel at `x` and `y` using given R, G, B values;
-    returns 1 on success, -1 if `x` or `y` are out of screen bounds
-    or either of the R, G, B values out of gradient step bounds
-};
-var color: integer;
-begin
-    color := rgb(r, g, b);
-    if color <> -1 then
-        pushrgb := putpixel(x, y, color)
-    else
-        pushrgb := -1;
-end;
-
-function savergb(x, y: integer; var r, g, b: byte): integer {
-    Stores R, G, B values of pixel at `x` and `y` in variable `rgb_value`;
-    returns 1 on success, -1 if `x` or `y` are out of screen bounds
-};
-var color: integer;
-begin
-    color := getpixel(x, y);
-    r := color div 36;
-    g := (color mod 36) div 6;
-    b := color mod 6;
-    savergb := color;
+        color := -1;
+    getrgb := (color <> -1);
+    if color <> -1 then begin
+        r := color div 36;
+        g := (color mod 36) div 6;
+        b := color mod 6;
+    end;
 end;
 
 end.

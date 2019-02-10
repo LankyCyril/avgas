@@ -9,7 +9,7 @@ begin
     for r := 0 to 5 do
         for g := 0 to 5 do
             for b := 0 to 5 do begin
-                pushrgb(r+g*6, b, r, g, b);
+                putrgb(r+g*6, b, r, g, b);
         end;
     readln;
     graphmode(false);
