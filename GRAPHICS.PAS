@@ -7,20 +7,18 @@ UNIT GRAPHICS {
 
 INTERFACE
 
-type RGB_record = record r, g, b: byte; end;
-     ColorPalette = array[byte] of RGB_record;
-
 const getmaxx = 319;
       getmaxy = 199;
 
-procedure graphmode(boolstate: boolean) {switches graphics on and off};
-function rgb(r, g, b: byte): integer {converts R, G, B to color number};
-
+procedure graphmode(boolstate: boolean) {
+    graphmode(true) enters 320x200x216 graphics mode;
+    graphmode(false) returns to text mode and restores default VGA palette
+};
 function pushrgb(x, y: integer; r, g, b: byte): integer {
     sets color of pixel at `x` and `y` using given R, G, B values
 };
-function savergb(x, y: integer; var rgb_value: RGB_record): integer {
-    stores R, G, B values of pixel at `x` and `y` in variable `rgb_value`
+function savergb(x, y: integer; var r, g, b: byte): integer {
+    pushes R, G, B values of pixel at `x` and `y` into `r`, `g`, and `b`
 };
 
 IMPLEMENTATION
@@ -28,9 +26,13 @@ IMPLEMENTATION
 uses dos;
 
 type VgaArray = array[0..getmaxy, 0..getmaxx] of byte;
+     RGB_record = record r, g, b: byte; end;
+     ColorPalette = array[byte] of RGB_record;
+
 var screen_array: VgaArray absolute $A000:$0000;
     vga_palette: ColorPalette;
     reg: registers;
+
 
 procedure savevgapalette {
     Stores current VGA color table in `vga_palette`
@@ -158,16 +160,16 @@ begin
         pushrgb := -1;
 end;
 
-function savergb(x, y: integer; var rgb_value: RGB_record): integer {
+function savergb(x, y: integer; var r, g, b: byte): integer {
     Stores R, G, B values of pixel at `x` and `y` in variable `rgb_value`;
     returns 1 on success, -1 if `x` or `y` are out of screen bounds
 };
 var color: integer;
 begin
     color := getpixel(x, y);
-    rgb_value.r := color div 36;
-    rgb_value.g := (color mod 36) div 6;
-    rgb_value.b := color mod 6;
+    r := color div 36;
+    g := (color mod 36) div 6;
+    b := color mod 6;
     savergb := color;
 end;
 
