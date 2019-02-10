@@ -1,11 +1,11 @@
-unit graphics {
+UNIT GRAPHICS {
     Implements a simplistic API for the VGA 320x200 pixel, 256 color mode.
     Sets the VGA palette to an RGB array with 6 steps of R, G, B values:
     colors from 0 to 215 are all possible combinations of these steps;
-    colors from 216 to 255 are black
+    colors from 216 to 255 are undefined
 };
 
-interface
+INTERFACE
 
 type RGB_record = record r, g, b: byte; end;
 type ColorPalette = array[byte] of RGB_record;
@@ -15,8 +15,6 @@ const getmaxy = 199;
 
 procedure graphmode(boolstate: boolean) {switches graphics on and off};
 function rgb(r, g, b: byte): integer {converts R, G, B to color number};
-function putpixel(x, y: integer; color: byte): integer;
-function getpixel(x, y: integer): integer;
 
 function pushrgb(x, y: integer; r, g, b: byte): integer {
     sets color of pixel at `x` and `y` using given R, G, B values
@@ -25,14 +23,13 @@ function savergb(x, y: integer; var rgb_value: RGB_record): integer {
     stores R, G, B values of pixel at `x` and `y` in variable `rgb_value`
 };
 
-implementation
+IMPLEMENTATION
 
 uses dos;
 
 type VgaArray = array[0..getmaxy, 0..getmaxx] of byte;
 var  screen_array: VgaArray absolute $A000:$0000;
 var  default_palette: ColorPalette;
-var  rgb_black: RGB_record;
 
 procedure savepalette(var palette: ColorPalette) {
     Stores current VGA color table in `palette`
@@ -49,12 +46,6 @@ begin
          dx := ofs(palette);
     end;
     intr($10, reg);
-    for i := 0 to 255 do
-        with palette[i] do begin
-             r := r shl 2;
-             g := g shl 2;
-             b := b shl 2;
-        end;
 end;
 
 procedure pushpalette(palette: ColorPalette) {
@@ -93,14 +84,11 @@ begin
     for r := 0 to 5 do
         for g := 0 to 5 do
             for b := 0 to 5 do begin
-                color := rgb(r, g, b);
                 rgb_color.r := r*12;
                 rgb_color.g := g*12;
                 rgb_color.b := b*12;
-                palette[color] := rgb_color;
+                palette[rgb(r, g, b)] := rgb_color;
             end;
-    for color := 216 to 255 do
-        palette[color] := rgb_black;
     pushpalette(palette);
 end;
 
