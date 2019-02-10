@@ -25,8 +25,7 @@ IMPLEMENTATION
 
 uses dos;
 
-var screen_array: array[0..getmaxy, 0..getmaxx] of byte absolute $A000:$0000;
-    vga_palette: array[0..767] of byte;
+var vga_palette: array[0..767] of byte;
     reg: registers;
 
 procedure savevgapalette {
@@ -119,7 +118,7 @@ begin
         else
             rgb := r*36 + g*6 + b;
         if rgb <> -1 then begin
-            screen_array[y, x] := rgb;
+            mem[$A000: y*320 + x] := rgb;
             putrgb := true;
         end;
     end;
@@ -129,17 +128,17 @@ function getrgb(x, y: integer; var r, g, b: byte): boolean {
     Pushes R, G, B values of pixel at `x` and `y` into `r`, `g`, and `b`;
     returns boolean value of success
 };
-var color: integer;
+var rgb: integer;
 begin
     if are_valid_coords(x, y) then
-        color := screen_array[y, x]
+        rgb := mem[$A000: y*320 + x]
     else
-        color := -1;
-    getrgb := (color <> -1);
-    if color <> -1 then begin
-        r := color div 36;
-        g := (color mod 36) div 6;
-        b := color mod 6;
+        rgb := -1;
+    getrgb := (rgb <> -1);
+    if rgb <> -1 then begin
+        r := rgb div 36;
+        g := (rgb mod 36) div 6;
+        b := rgb mod 6;
     end;
 end;
 
