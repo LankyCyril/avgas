@@ -168,14 +168,10 @@ function savergb(x, y: integer; var rgb_value: RGB_record): integer {
 var color: integer;
 begin
     color := getpixel(x, y);
-    if (color < 0) or (color > 255) then
-        savergb := -1
-    else begin
-        rgb_value.r := color div 36;
-        rgb_value.g := (color mod 36) div 6;
-        rgb_value.b := color mod 6;
-        savergb := 1;
-    end;
+    rgb_value.r := color div 36;
+    rgb_value.g := (color mod 36) div 6;
+    rgb_value.b := color mod 6;
+    savergb := color;
 end;
 
 end.
