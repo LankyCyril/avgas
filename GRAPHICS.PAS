@@ -2,14 +2,14 @@ unit graphics;
 
 interface
 
-type RGB = record r, g, b: byte; end;
-type ColorPalette = array[byte] of RGB;
+type RGB_record = record r, g, b: byte; end;
+type ColorPalette = array[byte] of RGB_record;
 
 const getmaxx = 319;
 const getmaxy = 199;
 
 procedure graphmode(boolstate: boolean);
-function color216(r, g, b: byte): integer;
+function rgb(r, g, b: byte): integer;
 function putpixel(x, y: integer; color: byte): boolean;
 function getpixel(x, y: integer): integer;
 
@@ -20,7 +20,7 @@ uses dos;
 type VgaArray = array[0..getmaxy, 0..getmaxx] of byte;
 var  screen_array: VgaArray absolute $A000:$0000;
 var  default_palette: ColorPalette;
-var  rgb_black: RGB;
+var  rgb_black: RGB_record;
 
 procedure savepalette(var palette: ColorPalette);
 var reg: registers;
@@ -57,23 +57,23 @@ begin
     intr($10, reg);
 end;
 
-function color216(r, g, b: byte): integer;
+function rgb(r, g, b: byte): integer;
 begin
     if (r > 5) or (g > 5) or (b > 5) then
-        color216 := -1
+        rgb := -1
     else
-        color216 := r*36 + g*6 + b;
+        rgb := r*36 + g*6 + b;
 end;
 
 procedure set216palette;
 var palette: ColorPalette;
     r, g, b, color: byte;
-    rgb_color: RGB;
+    rgb_color: RGB_record;
 begin
     for r := 0 to 5 do
         for g := 0 to 5 do
             for b := 0 to 5 do begin
-                color := color216(r, g, b);
+                color := rgb(r, g, b);
                 rgb_color.r := r*12;
                 rgb_color.g := g*12;
                 rgb_color.b := b*12;

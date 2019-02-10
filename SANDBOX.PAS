@@ -10,10 +10,10 @@ begin
     for r := 0 to 5 do
         for g := 0 to 5 do
             for b := 0 to 5 do begin
-                color := color216(r, g, b);
+                color := rgb(r, g, b);
                 putpixel(r+g*6, b, color);
         end;
-    putpixel(100, 100, color216(5, 5, 5));
+    putpixel(100, 100, rgb(5, 5, 5));
     readln;
     graphmode(false);
 end.
