@@ -1,4 +1,9 @@
-unit graphics;
+unit graphics {
+    Implements a simplistic API for the VGA 320x200 pixel, 256 color mode.
+    Sets the VGA palette to an RGB array with 6 steps of R, G, B values:
+    colors from 0 to 215 are all possible combinations of these steps;
+    colors from 216 to 255 are black
+};
 
 interface
 
@@ -8,9 +13,9 @@ type ColorPalette = array[byte] of RGB_record;
 const getmaxx = 319;
 const getmaxy = 199;
 
-procedure graphmode(boolstate: boolean);
-function rgb(r, g, b: byte): integer;
-function putpixel(x, y: integer; color: byte): boolean;
+procedure graphmode(boolstate: boolean) {switches graphics on and off};
+function rgb(r, g, b: byte): integer {converts R, G, B to color number};
+function putpixel(x, y: integer; color: byte): integer;
 function getpixel(x, y: integer): integer;
 
 implementation
@@ -22,7 +27,9 @@ var  screen_array: VgaArray absolute $A000:$0000;
 var  default_palette: ColorPalette;
 var  rgb_black: RGB_record;
 
-procedure savepalette(var palette: ColorPalette);
+procedure savepalette(var palette: ColorPalette) {
+    Stores current VGA color table in `palette`
+};
 var reg: registers;
     i: byte;
 begin
@@ -43,7 +50,9 @@ begin
         end;
 end;
 
-procedure pushpalette(palette: ColorPalette);
+procedure pushpalette(palette: ColorPalette) {
+    Writes RGB values from `palette` into the VGA color table
+};
 var reg: registers;
 begin
     fillchar(reg, sizeof(reg), 0);
@@ -57,7 +66,9 @@ begin
     intr($10, reg);
 end;
 
-function rgb(r, g, b: byte): integer;
+function rgb(r, g, b: byte): integer {
+    Converts R, G, B to color number; returns -1 if values out of bounds
+};
 begin
     if (r > 5) or (g > 5) or (b > 5) then
         rgb := -1
@@ -65,7 +76,9 @@ begin
         rgb := r*36 + g*6 + b;
 end;
 
-procedure set216palette;
+procedure set216palette {
+    Sets the VGA palette to an RGB array with 6 steps of each color
+};
 var palette: ColorPalette;
     r, g, b, color: byte;
     rgb_color: RGB_record;
@@ -84,9 +97,10 @@ begin
     pushpalette(palette);
 end;
 
-procedure graphmode(boolstate: boolean);
-{ graphmode(true) enters 320x200x216 graphics mode }
-{ graphmode(false) returns to text mode; }
+procedure graphmode(boolstate: boolean) {
+    graphmode(true) enters 320x200x216 graphics mode;
+    graphmode(false) returns to text mode and restores default VGA palette
+};
 var reg: registers;
 begin
     fillchar(reg, sizeof(reg), 0);
@@ -103,8 +117,9 @@ begin
         set216palette;
 end;
 
-function are_valid_coords(x, y: integer): boolean;
-{ return true if `x in [0..getmaxx]` and `y in [0..getmaxy]` }
+function are_valid_coords(x, y: integer): boolean {
+    returns true if `x` and `y` are within screen bounds, false otherwise
+};
 begin
     are_valid_coords := (
         (0 <= x) and (x <= getmaxx) and
@@ -112,19 +127,24 @@ begin
     );
 end;
 
-function putpixel(x, y: integer; color: byte): boolean;
-{ puts pixel; returns true on success, false if x or y out of range }
+function putpixel(x, y: integer; color: byte): integer {
+    puts pixel at `x` and `y` using color from current palette;
+    returns 1 on success, -1 if `x` or `y` are out of screen bounds
+};
 begin
     if are_valid_coords(x, y) then begin
         screen_array[y, x] := color;
-        putpixel := true;
+        putpixel := 1;
     end
     else
-        putpixel := false;
+        putpixel := -1;
 end;
 
-function getpixel(x, y: integer): integer;
-{ gets pixel; returns value 0..255 on success, -1 if x or y out of range }
+function getpixel(x, y: integer): integer {
+    gets color code of pixel at `x` and `y`;
+    returns color code (from 0 to 255) on success,
+    -1 if `x` or `y` are out of screen bounds
+};
 begin
     if are_valid_coords(x, y) then
         getpixel := screen_array[y, x]
