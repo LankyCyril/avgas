@@ -25,14 +25,9 @@ IMPLEMENTATION
 
 uses dos;
 
-type VgaArray = array[0..getmaxy, 0..getmaxx] of byte;
-     RGB_record = record r, g, b: byte; end;
-     ColorPalette = array[byte] of RGB_record;
-
-var screen_array: VgaArray absolute $A000:$0000;
-    vga_palette: ColorPalette;
+var screen_array: array[0..getmaxy, 0..getmaxx] of byte absolute $A000:$0000;
+    vga_palette: array[0..767] of byte;
     reg: registers;
-
 
 procedure savevgapalette {
     Stores current VGA color table in `vga_palette`
@@ -49,7 +44,7 @@ begin
     intr($10, reg);
 end;
 
-procedure pushpalette(palette: ColorPalette) {
+procedure pushpalette(palette: array of byte) {
     Writes RGB values from `palette` into the VGA color table
 };
 begin
@@ -77,17 +72,18 @@ end;
 procedure set216palette {
     Sets the VGA palette to an RGB array with 6 steps of each color
 };
-var palette: ColorPalette;
+var palette: array[0..767] of byte;
     r, g, b: byte;
-    rgb_color: RGB_record;
+    i: word;
 begin
+    i := 0;
     for r := 0 to 5 do
         for g := 0 to 5 do
             for b := 0 to 5 do begin
-                rgb_color.r := r*12;
-                rgb_color.g := g*12;
-                rgb_color.b := b*12;
-                palette[rgb(r, g, b)] := rgb_color;
+                palette[i] := r*12;
+                palette[i+1] := g*12;
+                palette[i+2] := b*12;
+                i := i + 3
             end;
     pushpalette(palette);
 end;
@@ -116,8 +112,7 @@ function are_valid_coords(x, y: integer): boolean {
 };
 begin
     are_valid_coords := (
-        (0 <= x) and (x <= getmaxx) and
-        (0 <= y) and (y <= getmaxy)
+        (0 <= x) and (x <= getmaxx) and (0 <= y) and (y <= getmaxy)
     );
 end;
 
