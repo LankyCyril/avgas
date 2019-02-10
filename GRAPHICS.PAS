@@ -61,20 +61,23 @@ end;
 procedure set216palette {
     Sets the VGA palette to an RGB array with 6 steps of each color
 };
-var palette: array[0..767] of byte;
-    r, g, b: byte;
+var r, g, b: byte;
     i: word;
 begin
     i := 0;
-    for r := 0 to 5 do
-        for g := 0 to 5 do
-            for b := 0 to 5 do begin
-                palette[i] := r*12;
-                palette[i+1] := g*12;
-                palette[i+2] := b*12;
-                i := i + 3
+    for r := 0 to 60 do if r mod 12 = 0 then
+        for g := 0 to 60 do if g mod 12 = 0 then
+            for b := 0 to 60 do if b mod 12 = 0 then begin
+                asm
+                   mov ax, 1010h
+                   mov bx, [i]
+                   mov dh, [r]
+                   mov ch, [g]
+                   mov cl, [b]
+                   int 10h
+                end;
+                inc(i);
             end;
-    pushpalette(palette);
 end;
 
 procedure graphmode(boolstate: boolean) {
