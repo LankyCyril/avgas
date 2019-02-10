@@ -13,6 +13,7 @@ begin
                 putpixel(r+g*6, b, rgb(r, g, b));
         end;
     putpixel(100, 100, rgb(5, 5, 5));
+    pushrgb(125, 125, 1, 2, 3);
     savergb(34, 3, rgb_value);
     readln;
     graphmode(false);

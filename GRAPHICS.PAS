@@ -18,6 +18,9 @@ function rgb(r, g, b: byte): integer {converts R, G, B to color number};
 function putpixel(x, y: integer; color: byte): integer;
 function getpixel(x, y: integer): integer;
 
+function pushrgb(x, y: integer; r, g, b: byte): integer {
+    sets color of pixel at `x` and `y` using given R, G, B values
+};
 procedure savergb(x, y: integer; var rgb_value: RGB_record) {
     stores R, G, B values of pixel at `x` and `y` in variable `rgb_value`
 };
@@ -154,6 +157,20 @@ begin
         getpixel := screen_array[y, x]
     else
         getpixel := -1;
+end;
+
+function pushrgb(x, y: integer; r, g, b: byte): integer {
+    Sets color of pixel at `x` and `y` using given R, G, B values;
+    returns 1 on success, -1 if `x` or `y` are out of screen bounds
+    or either of the R, G, B values out of gradient step bounds
+};
+var color: integer;
+begin
+    color := rgb(r, g, b);
+    if color <> -1 then
+        pushrgb := putpixel(x, y, color)
+    else
+        pushrgb := -1;
 end;
 
 procedure savergb(x, y: integer; var rgb_value: RGB_record) {
