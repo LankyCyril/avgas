@@ -2,6 +2,7 @@ uses crt, graphics;
 
 var
     x, y, color: integer;
+    palette: ColorTable;
 
 begin
      write('Press <ENTER> to test graphics, <ENTER> again to exit');
