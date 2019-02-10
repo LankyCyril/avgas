@@ -2,18 +2,14 @@ unit graphics;
 
 interface
 
-type
-    RGB = record
-        red: byte; green: byte; blue: byte;
-    end;
-    ColorTable = array[byte] of RGB;
+type RGB = record r, g, b: byte; end;
+type ColorPalette = array[byte] of RGB;
 
-const
-    getmaxx = 319;
-    getmaxy = 199;
+const getmaxx = 319;
+const getmaxy = 199;
 
 procedure graphmode(boolstate: boolean);
-procedure getpalette(var palette: ColorTable);
+function color216(r, g, b: byte): integer;
 function putpixel(x, y: integer; color: byte): boolean;
 function getpixel(x, y: integer): integer;
 
@@ -23,23 +19,11 @@ uses dos;
 
 type VgaArray = array[0..getmaxy, 0..getmaxx] of byte;
 var  screen_array: VgaArray absolute $A000:$0000;
+var  default_palette: ColorPalette;
+var  rgb_black: RGB;
 
-procedure graphmode(boolstate: boolean);
-{ graphmode(true) enters 320x240x256 graphics mode }
-{ graphmode(false) returns to text mode; }
+procedure savepalette(var palette: ColorPalette);
 var reg: registers;
-begin
-    fillchar(reg, sizeof(reg), 0);
-    if boolstate then
-        reg.ax := $0013
-    else
-        reg.ax := $0003;
-    intr($10, reg);
-end;
-
-procedure getpalette(var palette: ColorTable);
-var
-    reg: registers;
     i: byte;
 begin
     fillchar(reg, sizeof(reg), 0);
@@ -53,10 +37,70 @@ begin
     intr($10, reg);
     for i := 0 to 255 do
         with palette[i] do begin
-             red := red shl 2;
-             green := green shl 2;
-             blue := blue shl 2;
+             r := r shl 2;
+             g := g shl 2;
+             b := b shl 2;
         end;
+end;
+
+procedure pushpalette(palette: ColorPalette);
+var reg: registers;
+begin
+    fillchar(reg, sizeof(reg), 0);
+    with reg do begin
+         ax := $1012;
+         bx := 0;
+         cx := 256;
+         es := seg(palette);
+         dx := ofs(palette);
+    end;
+    intr($10, reg);
+end;
+
+function color216(r, g, b: byte): integer;
+begin
+    if (r > 5) or (g > 5) or (b > 5) then
+        color216 := -1
+    else
+        color216 := r*36 + g*6 + b;
+end;
+
+procedure set216palette;
+var palette: ColorPalette;
+    r, g, b, color: byte;
+    rgb_color: RGB;
+begin
+    for r := 0 to 5 do
+        for g := 0 to 5 do
+            for b := 0 to 5 do begin
+                color := color216(r, g, b);
+                rgb_color.r := r*12;
+                rgb_color.g := g*12;
+                rgb_color.b := b*12;
+                palette[color] := rgb_color;
+            end;
+    for color := 216 to 255 do
+        palette[color] := rgb_black;
+    pushpalette(palette);
+end;
+
+procedure graphmode(boolstate: boolean);
+{ graphmode(true) enters 320x200x216 graphics mode }
+{ graphmode(false) returns to text mode; }
+var reg: registers;
+begin
+    fillchar(reg, sizeof(reg), 0);
+    if boolstate then begin
+        savepalette(default_palette);
+        reg.ax := $0013;
+    end
+    else begin
+        pushpalette(default_palette);
+        reg.ax := $0003;
+    end;
+    intr($10, reg);
+    if boolstate then
+        set216palette;
 end;
 
 function are_valid_coords(x, y: integer): boolean;
