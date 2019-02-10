@@ -23,39 +23,30 @@ function getrgb(x, y: integer; var r, g, b: byte): boolean {
 
 IMPLEMENTATION
 
-uses dos;
-
 var vga_palette: array[0..767] of byte;
-    reg: registers;
 
-procedure savevgapalette {
+procedure savevgapalette; assembler {
     Stores current VGA color table in `vga_palette`
 };
-begin
-    fillchar(reg, sizeof(reg), 0);
-    with reg do begin
-         ax := $1017;
-         bx := 0;
-         cx := 256;
-         es := seg(vga_palette);
-         dx := ofs(vga_palette);
-    end;
-    intr($10, reg);
+asm
+   mov ax, 1017h
+   mov bx, 0
+   mov cx, 256
+   mov es, [seg vga_palette]
+   mov dx, [offset vga_palette]
+   int 10h
 end;
 
-procedure pushpalette(palette: array of byte) {
-    Writes RGB values from `palette` into the VGA color table
+procedure restorevgapalette; assembler {
+    Writes RGB values from `vga_palette` into the VGA color table
 };
-begin
-    fillchar(reg, sizeof(reg), 0);
-    with reg do begin
-         ax := $1012;
-         bx := 0;
-         cx := 256;
-         es := seg(palette);
-         dx := ofs(palette);
-    end;
-    intr($10, reg);
+asm
+   mov ax, 1012h
+   mov bx, 0
+   mov cx, 256
+   mov es, [seg vga_palette]
+   mov dx, [offset vga_palette]
+   int 10h
 end;
 
 procedure set216palette {
@@ -90,7 +81,7 @@ begin
         asm mov ax, 13h end;
     end
     else begin
-        pushpalette(vga_palette);
+        restorevgapalette;
         asm mov ax, 3 end;
     end;
     asm int 10h end;
