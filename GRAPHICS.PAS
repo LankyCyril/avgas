@@ -8,10 +8,10 @@ UNIT GRAPHICS {
 INTERFACE
 
 type RGB_record = record r, g, b: byte; end;
-type ColorPalette = array[byte] of RGB_record;
+     ColorPalette = array[byte] of RGB_record;
 
 const getmaxx = 319;
-const getmaxy = 199;
+      getmaxy = 199;
 
 procedure graphmode(boolstate: boolean) {switches graphics on and off};
 function rgb(r, g, b: byte): integer {converts R, G, B to color number};
@@ -28,22 +28,21 @@ IMPLEMENTATION
 uses dos;
 
 type VgaArray = array[0..getmaxy, 0..getmaxx] of byte;
-var  screen_array: VgaArray absolute $A000:$0000;
-var  default_palette: ColorPalette;
+var screen_array: VgaArray absolute $A000:$0000;
+    vga_palette: ColorPalette;
+    reg: registers;
 
-procedure savepalette(var palette: ColorPalette) {
-    Stores current VGA color table in `palette`
+procedure savevgapalette {
+    Stores current VGA color table in `vga_palette`
 };
-var reg: registers;
-    i: byte;
 begin
     fillchar(reg, sizeof(reg), 0);
     with reg do begin
          ax := $1017;
          bx := 0;
          cx := 256;
-         es := seg(palette);
-         dx := ofs(palette);
+         es := seg(vga_palette);
+         dx := ofs(vga_palette);
     end;
     intr($10, reg);
 end;
@@ -51,7 +50,6 @@ end;
 procedure pushpalette(palette: ColorPalette) {
     Writes RGB values from `palette` into the VGA color table
 };
-var reg: registers;
 begin
     fillchar(reg, sizeof(reg), 0);
     with reg do begin
@@ -78,7 +76,7 @@ procedure set216palette {
     Sets the VGA palette to an RGB array with 6 steps of each color
 };
 var palette: ColorPalette;
-    r, g, b, color: byte;
+    r, g, b: byte;
     rgb_color: RGB_record;
 begin
     for r := 0 to 5 do
@@ -96,15 +94,14 @@ procedure graphmode(boolstate: boolean) {
     graphmode(true) enters 320x200x216 graphics mode;
     graphmode(false) returns to text mode and restores default VGA palette
 };
-var reg: registers;
 begin
     fillchar(reg, sizeof(reg), 0);
     if boolstate then begin
-        savepalette(default_palette);
+        savevgapalette;
         reg.ax := $0013;
     end
     else begin
-        pushpalette(default_palette);
+        pushpalette(vga_palette);
         reg.ax := $0003;
     end;
     intr($10, reg);
