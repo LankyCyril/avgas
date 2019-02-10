@@ -82,16 +82,15 @@ procedure graphmode(boolstate: boolean) {
     graphmode(false) returns to text mode and restores default VGA palette
 };
 begin
-    fillchar(reg, sizeof(reg), 0);
     if boolstate then begin
         savevgapalette;
-        reg.ax := $0013;
+        asm mov ax, 13h end;
     end
     else begin
         pushpalette(vga_palette);
-        reg.ax := $0003;
+        asm mov ax, 3 end;
     end;
-    intr($10, reg);
+    asm int 10h end;
     if boolstate then
         set216palette;
 end;
