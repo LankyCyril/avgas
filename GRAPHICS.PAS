@@ -25,23 +25,11 @@ IMPLEMENTATION
 
 var vga_palette: array[0..767] of byte;
 
-procedure savevgapalette; assembler {
+procedure movevgapalette(ax_instr: word); assembler {
     Stores current VGA color table in `vga_palette`
 };
 asm
-   mov ax, 1017h
-   mov bx, 0
-   mov cx, 256
-   mov es, [seg vga_palette]
-   mov dx, [offset vga_palette]
-   int 10h
-end;
-
-procedure restorevgapalette; assembler {
-    Writes RGB values from `vga_palette` into the VGA color table
-};
-asm
-   mov ax, 1012h
+   mov ax, [ax_instr]
    mov bx, 0
    mov cx, 256
    mov es, [seg vga_palette]
@@ -77,11 +65,11 @@ procedure graphmode(boolstate: boolean) {
 };
 begin
     if boolstate then begin
-        savevgapalette;
+        movevgapalette($1017);
         asm mov ax, 13h end;
     end
     else begin
-        restorevgapalette;
+        movevgapalette($1012);
         asm mov ax, 3 end;
     end;
     asm int 10h end;
