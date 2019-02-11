@@ -13,6 +13,9 @@ INTERFACE
 const getmaxx = 319;
       getmaxy = 199;
 
+var rgb: array[0..5, 0..5, 0..5] of byte {
+    holds color codes associated with R, G, B values: `rgb[3,0,5]`
+};
 procedure graphmode(boolstate, palquicksave: boolean) {
     switches between text and graphics modes
 };
@@ -31,12 +34,18 @@ procedure reset_colors {
 
 IMPLEMENTATION
 
-const MOVE_AWAY=$1017;
-      MOVE_BACK=$1012;
-      COPY_AWAY=$1015;
-      COPY_BACK=$1010;
-
-var vga_palette: array[0..767] of byte;
+procedure fill_rgb_array {
+    Quickly fills `rgb` with color codes;
+    allows `putpixel(x, y, rgb[3,0,5])` etc
+};
+type FlatRGBArray = array[0..215] of byte;
+var pflatarray: ^FlatRGBArray;
+    i: byte;
+begin
+    pflatarray := @rgb[0];
+    for i := 0 to 215 do
+        pflatarray^[i] := i + 16;
+end;
 
 procedure reset_colors {
     Sets the VGA palette to an RGB array with 6 steps of each color
@@ -64,6 +73,11 @@ begin
     end;
 end;
 
+var vga_palette: array[0..767] of byte;
+
+const MOVE_AWAY=$1017;
+      MOVE_BACK=$1012;
+
 procedure move_vga_palette(ax_instruction: word); assembler {
     Saves and restores VGA palette via AX=1017h and AX=1012h instructions;
     may not work on some hardware.
@@ -77,6 +91,9 @@ asm
     mov ax, 1017h; {push or pop #cx RGB colors to/from memory at es:dx}
     int 10h
 end;
+
+const COPY_AWAY = $1015;
+      COPY_BACK = $1010;
 
 procedure copy_vga_palette(ax_instruction: word) {
     Saves and restores VGA palette by iterating over palette registers;
@@ -133,6 +150,7 @@ begin
         else
             copy_vga_palette(COPY_AWAY);
         reset_colors;
+        fill_rgb_array;
     end;
     if not boolstate then begin
         if palquicksave then
