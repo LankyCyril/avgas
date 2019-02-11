@@ -31,12 +31,12 @@ procedure movevgapalette(ax_instr: word); assembler {
     Stores current VGA color table in `vga_palette`
 };
 asm
-   mov ax, [ax_instr]
-   mov bx, 0
-   mov cx, 256
-   mov es, [seg vga_palette]
-   mov dx, [offset vga_palette]
-   int 10h
+    mov ax, [ax_instr]
+    mov bx, 0
+    mov cx, 256
+    mov es, [seg vga_palette]
+    mov dx, [offset vga_palette]
+    int 10h
 end;
 
 procedure set216palette {
@@ -50,12 +50,12 @@ begin
         for g := 0 to 60 do if g mod 12 = 0 then
             for b := 0 to 60 do if b mod 12 = 0 then begin
                 asm
-                   mov ax, 1010h
-                   mov bx, [i]
-                   mov dh, [r]
-                   mov ch, [g]
-                   mov cl, [b]
-                   int 10h
+                    mov ax, 1010h
+                    mov bx, [i]
+                    mov dh, [r]
+                    mov ch, [g]
+                    mov cl, [b]
+                    int 10h
                 end;
                 inc(i);
             end;
