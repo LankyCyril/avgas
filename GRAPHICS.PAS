@@ -37,15 +37,15 @@ procedure set_216_palette {
 };
 var r, g, b: byte;
 begin
-    asm mov ax, 1010h end;
+    asm mov ax, 1010h end; {set RGB of color #bx}
     asm mov bx, 0 end;
-    asm mov dh, 0 end;
+    asm mov dh, 0 end; {red}
     for r := 0 to 5 do begin
         asm shl dh, 1 end;
-        asm mov ch, 0 end;
+        asm mov ch, 0 end; {green}
         for g := 0 to 5 do begin
             asm shl ch, 1 end;
-            asm mov cl, 0 end;
+            asm mov cl, 0 end; {blue}
             for b := 0 to 5 do asm
                 shl cl, 1
                 int 10h
@@ -70,14 +70,14 @@ begin
         mov dx, [offset vga_palette]
     end;
     if boolstate then asm
-        mov ax, 1017h
+        mov ax, 1017h; {push #cx RGB colors to memory at es:dx}
         int 10h
-        mov ax, 13h
+        mov ax, 13h; {set 320x240x256 graphics mode}
     end
     else asm
-        mov ax, 1012h
+        mov ax, 1012h; {pop #cx RGB colors from memory at es:dx}
         int 10h
-        mov ax, 3
+        mov ax, 3 {set 80x25x16 text mode}
     end;
     asm int 10h end;
     if boolstate then
@@ -91,9 +91,8 @@ function putrgb(x, y: word; r, g, b: byte): boolean {
 begin
     if (x <= getmaxx) and (y <= getmaxy)
     and (r < 6) and (g < 6) and (b < 6) then begin
-        mem[$A000: y shl 8 + y shl 6 + x] := (
-            r shl 5 + (r + g) shl 2 + g shl 1 + b
-        );
+        mem[$A000: y shl 8 + y shl 6 + x {320 * y + x}] :=
+            r shl 5 + (r + g) shl 2 + g shl 1 + b; {r * 36 + g * 6 + b}
         putrgb := true;
     end
     else
@@ -106,11 +105,11 @@ function getrgb(x, y: word; var r, g, b: byte): boolean {
 };
 begin
     if (x <= getmaxx) and (y <= getmaxy) then begin
-        b := mem[$A000: y shl 8 + y shl 6 + x];
-        r := b shr 2 div 9;
-        b := b - r shl 5 - r shl 2;
-        g := b shr 1 div 3;
-        b := b - g shl 2 - g shl 1;
+        b := mem[$A000: y shl 8 + y shl 6 + x {320 * y + x}];
+        r := b shr 2 div 9; {b div 36}
+        b := b - r shl 5 - r shl 2; {b mod 36}
+        g := b shr 1 div 3; {b div 6}
+        b := b - g shl 2 - g shl 1; {b mod 6}
         getrgb := true;
     end
     else
