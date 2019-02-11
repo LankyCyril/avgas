@@ -117,23 +117,25 @@ begin
         getrgb := false;
 end;
 
-procedure fade(smoothing: byte) {
+procedure fade(smoothing: byte); assembler {
     Darkens and washes out VGA palette
 };
-var i: byte;
-begin
-    for i := 0 to 255 do asm
-        mov bx, [word(i)]
-        mov ax, 1015h
+asm
+    mov bx, 255; {color number}
+    mov cl, 255; {loop counter}
+    @@fadeloop:
+        mov ax, 1015h; {get RGB of color #bl (#bx)}
         int 10h
-        add dh, [smoothing]
-        add ch, [smoothing]
-        add cl, [smoothing]
+        add dh, [smoothing]; {red}
+        add ch, [smoothing]; {green}
+        add cl, [smoothing]; {blue}
         shr dh, 1
         shr cx, 1
-        mov ax, 1010h
+        mov ax, 1010h; {set RGB of color #bl (#bx)}
         int 10h
-    end;
+        sub bx, 1;  {previous color}
+        mov cl, bl; {decrease loop counter, was overwritten}
+    jnz @@fadeloop
 end;
 
 procedure reset_colors {
