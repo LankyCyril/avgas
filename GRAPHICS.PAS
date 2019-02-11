@@ -79,40 +79,37 @@ begin
         set_216_palette;
 end;
 
-function are_valid_coords(x, y: word): boolean {
-    returns true if `x` and `y` are within screen bounds, false otherwise
-};
-begin
-    are_valid_coords := (x <= getmaxx) and (y <= getmaxy);
-end;
-
 function putrgb(x, y: word; r, g, b: byte): boolean {
     Sets color of pixel at `x` and `y` using given R, G, B values;
     returns boolean value of success
 };
 begin
-    putrgb := false;
-    if are_valid_coords(x, y) then
-        if (r < 6) and (g < 6) and (b < 6) then begin
-            mem[$A000: y*320 + x] := r*36 + g*6 + b;
-            putrgb := true;
-        end;
+    if (x <= getmaxx) and (y <= getmaxy)
+    and (r < 6) and (g < 6) and (b < 6) then begin
+        mem[$A000: y shl 8 + y shl 6 + x] := (
+            r shl 5 + r shl 2 + g shl 2 + g shl 1 + b
+        );
+        putrgb := true;
+    end
+    else
+        putrgb := false;
 end;
 
 function getrgb(x, y: word; var r, g, b: byte): boolean {
     Pushes R, G, B values of pixel at `x` and `y` into `r`, `g`, and `b`;
     returns boolean value of success
 };
-var rgb: integer;
 begin
-    getrgb := false;
-    if are_valid_coords(x, y) then begin
-        rgb := mem[$A000: y*320 + x];
-        r := rgb div 36;
-        g := rgb mod 36 div 6;
-        b := rgb mod 6;
+    if (x <= getmaxx) and (y <= getmaxy) then begin
+        b := mem[$A000: y shl 8 + y shl 6 + x];
+        r := b div 36;
+        b := b - r shl 5 - r shl 2;
+        g := b div 6;
+        b := b - g shl 2 - g shl 1;
         getrgb := true;
-    end;
+    end
+    else
+        getrgb := false;
 end;
 
 end.
