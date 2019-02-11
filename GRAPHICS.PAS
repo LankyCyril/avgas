@@ -1,9 +1,11 @@
 {$A-,B-,D+,E+,F-,G+,I-,L+,N-,O-,P-,Q-,R+,S-,T-,V+,X+,Y+}
 UNIT GRAPHICS {
-    Implements a simplistic API for the VGA 320x200 pixel, 256 color mode.
-    Sets the VGA palette to an RGB array with 6 steps of R, G, B values:
-    colors from 0 to 215 are all possible combinations of these steps;
-    colors from 216 to 255 are undefined
+    Implements a simplistic API for the VGA 320x200 pixel, 216 color mode.
+    Actual number of available colors in this mode is 256, but this unit
+    sets the VGA palette to an RGB array with 6 steps of R, G, B values:
+    colors from 16 to 231 are all possible combinations of these steps;
+    colors from 0 to 15 are preserved (16 basic colors);
+    colors from 232 to 255 are undefined.
 };
 
 INTERFACE
@@ -38,7 +40,7 @@ procedure set_216_palette {
 var r, g, b: byte;
 begin
     asm mov ax, 1010h end; {set RGB of color #bx}
-    asm mov bx, 0 end;
+    asm mov bx, 16 end;
     asm mov dh, 0 end; {red}
     for r := 0 to 5 do begin
         asm shl dh, 1 end;
@@ -92,7 +94,8 @@ begin
     if (x <= getmaxx) and (y <= getmaxy)
     and (r < 6) and (g < 6) and (b < 6) then begin
         mem[$A000: y shl 8 + y shl 6 + x {320 * y + x}] :=
-            r shl 5 + (r + g) shl 2 + g shl 1 + b; {r * 36 + g * 6 + b}
+            r shl 5 + (r + g) shl 2 + g shl 1 + b + 16;
+            {r * 36 + g * 6 + b + 16}
         putrgb := true;
     end
     else
@@ -105,7 +108,7 @@ function getrgb(x, y: word; var r, g, b: byte): boolean {
 };
 begin
     if (x <= getmaxx) and (y <= getmaxy) then begin
-        b := mem[$A000: y shl 8 + y shl 6 + x {320 * y + x}];
+        b := mem[$A000: y shl 8 + y shl 6 + x {320 * y + x}] - 16;
         r := b shr 2 div 9; {b div 36}
         b := b - r shl 5 - r shl 2; {b mod 36}
         g := b shr 1 div 3; {b div 6}
@@ -121,7 +124,6 @@ procedure fade(smoothing: byte); assembler {
 };
 asm
     mov bx, 255; {color number}
-    mov cl, 255; {loop counter}
     @@fadeloop:
         mov ax, 1015h; {get RGB of color #bl (#bx)}
         int 10h
@@ -134,6 +136,7 @@ asm
         int 10h
         sub bx, 1;  {previous color}
         mov cl, bl; {decrease loop counter, was overwritten}
+        sub cl, 16;
     jnz @@fadeloop
 end;
 

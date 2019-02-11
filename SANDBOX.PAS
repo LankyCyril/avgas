@@ -17,7 +17,8 @@ begin
     end;
     readln;
     getrgb(239, 77, r, g, y);
-    for x := 0 to 3 do begin
+    for x := 1 to 4 do begin
+        writeln('Line number ', x);
         fade(0);
         readln;
     end;
