@@ -1,4 +1,4 @@
-{$A-,B-,D+,E+,F-,G+,I-,L+,N-,O-,P-,Q-,R+,S-,T-,V+,X+,Y+}
+{$A-,B-,D+,E-,F-,G+,I-,L+,N-,O-,P-,Q-,R+,S-,T-,V+,X+,Y+}
 UNIT GRAPHICS {
     Implements a simplistic API for the VGA 320x200 pixel, 216 color mode.
     Actual number of available colors in this mode is 256, but this unit
@@ -34,7 +34,7 @@ IMPLEMENTATION
 
 var vga_palette: array[0..767] of byte;
 
-procedure set_216_palette {
+procedure reset_colors {
     Sets the VGA palette to an RGB array with 6 steps of each color
 };
 var r, g, b: byte;
@@ -83,7 +83,7 @@ begin
     end;
     asm int 10h end;
     if boolstate then
-        set_216_palette;
+        reset_colors;
 end;
 
 function putrgb(x, y: word; r, g, b: byte): boolean {
@@ -139,9 +139,5 @@ asm
         sub cl, 16;
     jnz @@fadeloop
 end;
-
-procedure reset_colors {
-    Restores full saturation 216 color palette
-}; begin set_216_palette; end;
 
 end.
