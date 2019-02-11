@@ -15,5 +15,9 @@ begin
         end;
     end;
     readln;
+    getrgb(239, 77, r, g, b);
     graphmode(false);
+    writeln('The pixel at (239, 77) was ', r, ',', g, ',', b);
+    write('Press <ENTER> to exit');
+    readln;
 end.
