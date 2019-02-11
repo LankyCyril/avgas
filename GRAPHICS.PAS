@@ -21,6 +21,12 @@ function putrgb(x, y: word; r, g, b: byte): boolean {
 function getrgb(x, y: word; var r, g, b: byte): boolean {
     pushes R, G, B values of pixel at `x` and `y` into `r`, `g`, and `b`
 };
+procedure fade(smoothing: byte) {
+    darkens and washes out VGA palette
+};
+procedure reset_colors {
+    restores full saturation 216 color palette
+};
 
 IMPLEMENTATION
 
@@ -110,5 +116,28 @@ begin
     else
         getrgb := false;
 end;
+
+procedure fade(smoothing: byte) {
+    Darkens and washes out VGA palette
+};
+var i: byte;
+begin
+    for i := 0 to 255 do asm
+        mov bx, [word(i)]
+        mov ax, 1015h
+        int 10h
+        add dh, [smoothing]
+        add ch, [smoothing]
+        add cl, [smoothing]
+        shr dh, 1
+        shr cx, 1
+        mov ax, 1010h
+        int 10h
+    end;
+end;
+
+procedure reset_colors {
+    Restores full saturation 216 color palette
+}; begin set_216_palette; end;
 
 end.

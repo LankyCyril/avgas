@@ -5,7 +5,7 @@ var r, g, y: byte;
     x: word;
 
 begin
-    write('Press <ENTER> to test graphics, <ENTER> again to exit');
+    write('Keep pressing <ENTER>');
     readln;
     graphmode(true);
     for x := 0 to getmaxx do begin
@@ -17,6 +17,12 @@ begin
     end;
     readln;
     getrgb(239, 77, r, g, y);
+    for x := 0 to 3 do begin
+        fade(0);
+        readln;
+    end;
+    reset_colors;
+    readln;
     graphmode(false);
     writeln('The pixel at (239, 77) was ', r, ',', g, ',', y);
     write('Press <ENTER> to exit');
