@@ -25,6 +25,9 @@ function getrgb(x, y: integer; var r, g, b: byte): boolean {
 
 IMPLEMENTATION
 
+const MOVE_AWAY = $1017;
+      MOVE_BACK = $1012;
+
 var vga_palette: array[0..767] of byte;
 
 procedure movevgapalette(ax_instr: word); assembler {
@@ -43,21 +46,17 @@ procedure set216palette {
     Sets the VGA palette to an RGB array with 6 steps of each color
 };
 var r, g, b: byte;
-    i: word;
 begin
-    i := 0;
+    asm mov bx, 0 end;
     for r := 0 to 60 do if r mod 12 = 0 then
         for g := 0 to 60 do if g mod 12 = 0 then
-            for b := 0 to 60 do if b mod 12 = 0 then begin
-                asm
-                    mov ax, 1010h
-                    mov bx, [i]
-                    mov dh, [r]
-                    mov ch, [g]
-                    mov cl, [b]
-                    int 10h
-                end;
-                inc(i);
+            for b := 0 to 60 do if b mod 12 = 0 then asm
+                mov ax, 1010h
+                mov dh, [r]
+                mov ch, [g]
+                mov cl, [b]
+                int 10h
+                add bx, 1
             end;
 end;
 
@@ -67,11 +66,11 @@ procedure graphmode(boolstate: boolean) {
 };
 begin
     if boolstate then begin
-        movevgapalette($1017);
+        movevgapalette(MOVE_AWAY);
         asm mov ax, 13h end;
     end
     else begin
-        movevgapalette($1012);
+        movevgapalette(MOVE_BACK);
         asm mov ax, 3 end;
     end;
     asm int 10h end;
