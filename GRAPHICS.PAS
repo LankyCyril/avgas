@@ -1,3 +1,5 @@
+{$A-,B-,D+,E+,F-,G+,I-,L+,N-,O-,P-,Q-,R+,S-,T-,V+,X+,Y+}
+{$M 16384,0,655360}
 UNIT GRAPHICS {
     Implements a simplistic API for the VGA 320x200 pixel, 256 color mode.
     Sets the VGA palette to an RGB array with 6 steps of R, G, B values:
@@ -103,15 +105,13 @@ function getrgb(x, y: word; var r, g, b: byte): boolean {
 };
 var rgb: integer;
 begin
-    if are_valid_coords(x, y) then
-        rgb := mem[$A000: y*320 + x]
-    else
-        rgb := -1;
-    getrgb := (rgb <> -1);
-    if rgb <> -1 then begin
+    getrgb := false;
+    if are_valid_coords(x, y) then begin
+        rgb := mem[$A000: y*320 + x];
         r := rgb div 36;
-        g := (rgb mod 36) div 6;
+        g := rgb mod 36 div 6;
         b := rgb mod 6;
+        getrgb := true;
     end;
 end;
 
