@@ -32,6 +32,7 @@ procedure set_216_palette {
 };
 var r, g, b: byte;
 begin
+    asm mov ax, 1010h end;
     asm mov bx, 0 end;
     asm mov dh, 0 end;
     for r := 0 to 5 do begin
@@ -42,7 +43,6 @@ begin
             asm mov cl, 0 end;
             for b := 0 to 5 do asm
                 shl cl, 1
-                mov ax, 1010h
                 int 10h
                 add bx, 1
                 add cl, 1
@@ -87,7 +87,7 @@ begin
     if (x <= getmaxx) and (y <= getmaxy)
     and (r < 6) and (g < 6) and (b < 6) then begin
         mem[$A000: y shl 8 + y shl 6 + x] := (
-            r shl 5 + r shl 2 + g shl 2 + g shl 1 + b
+            r shl 5 + (r + g) shl 2 + g shl 1 + b
         );
         putrgb := true;
     end
@@ -102,9 +102,9 @@ function getrgb(x, y: word; var r, g, b: byte): boolean {
 begin
     if (x <= getmaxx) and (y <= getmaxy) then begin
         b := mem[$A000: y shl 8 + y shl 6 + x];
-        r := b div 36;
+        r := b shr 2 div 9;
         b := b - r shl 5 - r shl 2;
-        g := b div 6;
+        g := b shr 1 div 3;
         b := b - g shl 2 - g shl 1;
         getrgb := true;
     end
