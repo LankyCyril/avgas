@@ -19,11 +19,11 @@ var rgb: array[0..5, 0..5, 0..5] of byte {
 procedure graphmode(boolstate, palquicksave: boolean) {
     switches between text and graphics modes
 };
-function putrgb(x, y: word; r, g, b: byte): boolean {
-    sets color of pixel at `x` and `y` using given R, G, B values
+function putpixel(x, y: word; color: byte): boolean {
+    sets color of pixel at `x` and `y` to `color`
 };
-function getrgb(x, y: word; var r, g, b: byte): boolean {
-    pushes R, G, B values of pixel at `x` and `y` into `r`, `g`, and `b`
+function getpixel(x, y: word; var color: byte): boolean {
+    pushes color code of pixel at `x` and `y` into `color`
 };
 procedure fade(smoothing: byte) {
     darkens and washes out VGA palette
@@ -162,37 +162,30 @@ begin
     end;
 end;
 
-function putrgb(x, y: word; r, g, b: byte): boolean {
+function putpixel(x, y: word; color: byte): boolean {
     Sets color of pixel at `x` and `y` using given R, G, B values;
     returns boolean value of success
 };
 begin
-    if (x <= getmaxx) and (y <= getmaxy)
-    and (r < 6) and (g < 6) and (b < 6) then begin
-        mem[$A000: y shl 8 + y shl 6 + x {320 * y + x}] :=
-            r shl 5 + (r + g) shl 2 + g shl 1 + b + 16;
-            {r * 36 + g * 6 + b + 16}
-        putrgb := true;
+    if (x <= getmaxx) and (y <= getmaxy) then begin
+        mem[$A000: y shl 8 + y shl 6 + x {320 * y + x}] := color;
+        putpixel := true;
     end
     else
-        putrgb := false;
+        putpixel := false;
 end;
 
-function getrgb(x, y: word; var r, g, b: byte): boolean {
-    Pushes R, G, B values of pixel at `x` and `y` into `r`, `g`, and `b`;
+function getpixel(x, y: word; var color: byte): boolean {
+    Pushes color code of pixel at `x` and `y` into `color`;
     returns boolean value of success
 };
 begin
     if (x <= getmaxx) and (y <= getmaxy) then begin
-        b := mem[$A000: y shl 8 + y shl 6 + x {320 * y + x}] - 16;
-        r := b shr 2 div 9; {b div 36}
-        b := b - r shl 5 - r shl 2; {b mod 36}
-        g := b shr 1 div 3; {b div 6}
-        b := b - g shl 2 - g shl 1; {b mod 6}
-        getrgb := true;
+        color := mem[$A000: y shl 8 + y shl 6 + x {320 * y + x}];
+        getpixel := true;
     end
     else
-        getrgb := false;
+        getpixel := false;
 end;
 
 procedure fade(smoothing: byte); assembler {

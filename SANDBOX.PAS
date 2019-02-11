@@ -12,11 +12,11 @@ begin
         r := x div 54;
         for y := 0 to getmaxy do begin
             g := y div 40;
-            putrgb(x, y, r, g, 0);
+            putpixel(x, y, rgb[r,g,0]);
         end;
     end;
     readln;
-    getrgb(239, 77, r, g, y);
+    getpixel(239, 77, y);
     for x := 1 to 4 do begin
         writeln('Line number ', x);
         fade(0);
@@ -25,7 +25,7 @@ begin
     reset_colors;
     readln;
     graphmode(false, false);
-    writeln('The pixel at (239, 77) was ', r, ',', g, ',', y);
+    writeln('The pixel at (239, 77) was ', y);
     write('Press <ENTER> to exit');
     readln;
 end.
