@@ -47,18 +47,18 @@ var r, g, b: byte;
 begin
     asm mov bx, 0 end;
     for r := 0 to 5 do for g := 0 to 5 do for b := 0 to 5 do asm
-        mov al, 12
         mov dh, [r]
-        mul dh
-        mov dh, al
-        mov al, 12
+        shl dh, 1
+        add dh, [r]
+        shl dh, 2
         mov ch, [g]
-        mul ch
-        mov ch, al
-        mov al, 12
+        shl ch, 1
+        add ch, [g]
+        shl ch, 2
         mov cl, [b]
-        mul cl
-        mov cl, al
+        shl cl, 1
+        add cl, [b]
+        shl cl, 2
         mov ax, 1010h
         int 10h
         add bx, 1
