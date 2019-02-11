@@ -7,7 +7,7 @@ var r, g, y: byte;
 begin
     write('Keep pressing <ENTER>');
     readln;
-    graphmode(true);
+    graphmode(true, false);
     for x := 0 to getmaxx do begin
         r := x div 54;
         for y := 0 to getmaxy do begin
@@ -24,7 +24,7 @@ begin
     end;
     reset_colors;
     readln;
-    graphmode(false);
+    graphmode(false, false);
     writeln('The pixel at (239, 77) was ', r, ',', g, ',', y);
     write('Press <ENTER> to exit');
     readln;
