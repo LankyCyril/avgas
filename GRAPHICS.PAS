@@ -1,5 +1,3 @@
-{$A-,B-,D+,E+,F-,G-,I-,L+,N-,O-,P-,Q-,R-,S-,T-,V+,X+,Y+}
-{$M 16384,0,655360}
 UNIT GRAPHICS {
     Implements a simplistic API for the VGA 320x200 pixel, 256 color mode.
     Sets the VGA palette to an RGB array with 6 steps of R, G, B values:
@@ -48,16 +46,23 @@ procedure set216palette {
 var r, g, b: byte;
 begin
     asm mov bx, 0 end;
-    for r := 0 to 60 do if r mod 12 = 0 then
-        for g := 0 to 60 do if g mod 12 = 0 then
-            for b := 0 to 60 do if b mod 12 = 0 then asm
-                mov ax, 1010h
-                mov dh, [r]
-                mov ch, [g]
-                mov cl, [b]
-                int 10h
-                add bx, 1
-            end;
+    for r := 0 to 5 do for g := 0 to 5 do for b := 0 to 5 do asm
+        mov al, 12
+        mov dh, [r]
+        mul dh
+        mov dh, al
+        mov al, 12
+        mov ch, [g]
+        mul ch
+        mov ch, al
+        mov al, 12
+        mov cl, [b]
+        mul cl
+        mov cl, al
+        mov ax, 1010h
+        int 10h
+        add bx, 1
+    end;
 end;
 
 procedure graphmode(boolstate: boolean) {
