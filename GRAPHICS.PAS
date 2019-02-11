@@ -46,22 +46,23 @@ procedure set216palette {
 var r, g, b: byte;
 begin
     asm mov bx, 0 end;
-    for r := 0 to 5 do for g := 0 to 5 do for b := 0 to 5 do asm
-        mov dh, [r]
-        shl dh, 1
-        add dh, [r]
-        shl dh, 2
-        mov ch, [g]
-        shl ch, 1
-        add ch, [g]
-        shl ch, 2
-        mov cl, [b]
-        shl cl, 1
-        add cl, [b]
-        shl cl, 2
-        mov ax, 1010h
-        int 10h
-        add bx, 1
+    asm mov dh, 0 end;
+    for r := 0 to 5 do begin
+        asm shl dh, 1 end;
+        asm mov ch, 0 end;
+        for g := 0 to 5 do begin
+            asm shl ch, 1 end;
+            asm mov cl, 0 end;
+            for b := 0 to 5 do asm
+                shl cl, 1
+                mov ax, 1010h
+                int 10h
+                add bx, 1
+                add cl, 1
+            end;
+            asm add ch, 1 end;
+        end;
+        asm add dh, 1 end;
     end;
 end;
 
