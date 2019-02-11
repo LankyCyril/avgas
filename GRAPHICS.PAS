@@ -65,25 +65,27 @@ procedure graphmode(boolstate: boolean) {
     graphmode(false) returns to text mode and restores default VGA palette
 };
 begin
+    if boolstate then asm
+        mov ax, 13h; {set 320x240x256 graphics mode}
+        int 10h
+    end;
     asm
         mov bx, 0
         mov cx, 256
         mov es, [seg vga_palette]
         mov dx, [offset vga_palette]
     end;
-    if boolstate then asm
-        mov ax, 1017h; {push #cx RGB colors to memory at es:dx}
-        int 10h
-        mov ax, 13h; {set 320x240x256 graphics mode}
-    end
-    else asm
+    if boolstate then begin
+        asm mov ax, 1017h end; {push #cx RGB colors to memory at es:dx}
+        asm int 10h end;
+        reset_colors; {set 216 color palette}
+    end;
+    if not boolstate then asm
         mov ax, 1012h; {pop #cx RGB colors from memory at es:dx}
         int 10h
-        mov ax, 3 {set 80x25x16 text mode}
+        mov ax, 3; {set 80x25x16 text mode}
+        int 10h
     end;
-    asm int 10h end;
-    if boolstate then
-        reset_colors;
 end;
 
 function putrgb(x, y: word; r, g, b: byte): boolean {
