@@ -9,7 +9,7 @@ begin
     readln;
     graphmode(true);
     for y := 0 to getmaxy do begin
-        g := y div 40;
+        g := y div 34 mod 6;
         for x := 0 to getmaxx do begin
             r := x div 54;
             putpixel(x, y, rgb[r,g,0]);
