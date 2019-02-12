@@ -5,6 +5,9 @@ INTERFACE
 function hline(x1, x2, y: word; color: byte): boolean {
     draws a horizontal line from point (x1, y) to point (x2, y) with `color`
 };
+function block(x1, y1, x2, y2: word; color: byte): boolean {
+    draws a filled rectangle of `color` from point (x1, y1) to point (x2, y2)
+};
 
 IMPLEMENTATION
 
@@ -30,6 +33,20 @@ begin
     end
     else
         mem[$A000: y shl 8 + y shl 6 + x1] := color;
+end;
+
+function block(x1, y1, x2, y2: word; color: byte): boolean {
+    Draws a filled rectangle of `color` from point (x1, y1) to point (x2, y2);
+    returns false if has negative dimensions or completely out of bounds;
+    otherwise, returns true.
+};
+var y: word;
+begin
+    block := true;
+    if (x1 > x2) or (y1 > y2) or (x1 > getmaxx) or (y1 > getmaxy) then
+        block := false
+    else for y := y1 to y2 do
+        hline(x1, x2, y, color);
 end;
 
 end.

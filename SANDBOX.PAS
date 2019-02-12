@@ -29,6 +29,8 @@ begin
     for y := 0 to getmaxy do
         hline(y, getmaxx, y, 5);
     readln;
+    block(30, 30, 270, 150, 1);
+    readln;
     graphmode(false, false);
     writeln('The pixel at (239, 77) was ', y);
     write('Press <ENTER> to exit');
