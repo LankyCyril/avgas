@@ -34,8 +34,9 @@ begin
     fillscreen(rgb[5,5,0]);
     write('Fill screen with extended yellow');
     readln;
-    for y := 0 to getmaxy do
-        hline(y, getmaxx, y, rgb[y div 36 mod 6, 0, y mod 6]);
+    y := 0;
+    while hline(y, getmaxx, y, rgb[y div 36 mod 6, 0, y mod 6]) do
+        inc(y);
     write('Gradient plot horizontal offset lines');
     readln;
     block(30, 25, 270, 170, 9);
