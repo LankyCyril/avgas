@@ -25,6 +25,9 @@ function putpixel(x, y: word; color: byte): boolean {
 function getpixel(x, y: word; var color: byte): boolean {
     pushes color code of pixel at `x` and `y` into `color`
 };
+procedure fillscreen(color: byte) {
+    fills screen with `color`; fillscreen(0) can be used to clear screen
+};
 procedure fade(smoothing: byte) {
     darkens and washes out VGA palette
 };
@@ -186,6 +189,13 @@ begin
     end
     else
         getpixel := false;
+end;
+
+procedure fillscreen(color: byte) {
+    Fills screen with `color`; fillscreen(0) can be used to clear screen
+};
+begin
+    fillchar(mem[$A000:0], 64000, color);
 end;
 
 procedure fade(smoothing: byte); assembler {
