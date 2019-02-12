@@ -58,7 +58,7 @@ procedure resetcolors {
 var r, g, b: byte;
 begin
     asm mov ax, 1010h end; {set RGB of color #bx}
-    asm mov bx, 16 end;
+    asm mov bx, 16 end; {only operate on extended colors}
     asm mov dh, 0 end; {red}
     for r := 0 to 5 do begin
         asm shl dh, 1 end;
@@ -204,7 +204,7 @@ procedure fade(smoothing: byte); assembler {
     Darkens and washes out VGA palette
 };
 asm
-    mov bx, 255; {color number}
+    mov bx, 231; {color number}
     @@fadeloop:
         mov ax, 1015h; {get RGB of color #bl (#bx)}
         int 10h
@@ -215,9 +215,9 @@ asm
         shr cx, 1
         mov ax, 1010h; {set RGB of color #bl (#bx)}
         int 10h
-        sub bx, 1;  {previous color}
-        mov cl, bl; {decrease loop counter, was overwritten}
-        sub cl, 16;
+        sub bx, 1; {previous color}
+        mov cl, bl; {synchronize loop counter with color number}
+        sub cl, 16; {except make sure we stop before base 16 colors}
     jnz @@fadeloop
 end;
 

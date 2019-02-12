@@ -32,14 +32,14 @@ begin
     write('Restore the 216 colors');
     readln;
     fillscreen(rgb[5,5,0]);
-    write('Fill screen with yellow');
+    write('Fill screen with extended yellow');
     readln;
     for y := 0 to getmaxy do
         hline(y, getmaxx, y, rgb[y div 36 mod 6, 0, y mod 6]);
     write('Gradient plot horizontal offset lines');
     readln;
-    block(30, 30, 270, 170, 9);
-    write('Plot light blue block');
+    block(30, 25, 270, 170, 9);
+    write('Plot base light blue block');
     readln;
     graphmode(false, false);
     write('Press <ENTER> to exit');
