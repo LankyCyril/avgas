@@ -18,7 +18,7 @@ var rgb: array[0..5, 0..5, 0..5] of byte {
     avoids function call overheads (if it were function(r, g, b)) or
     having to compute values inline each time
 };
-procedure graphmode(boolstate, palquicksave: boolean) {
+procedure graphmode(boolstate: boolean) {
     switches between text and graphics modes
 };
 function putpixel(x, y: word; color: byte): boolean {
@@ -36,8 +36,13 @@ procedure fade(smoothing: byte) {
 procedure resetcolors {
     restores full saturation 216 color palette
 };
+procedure fill_rgb_array {
+    internal function, exposed only for use in module GRAPHEXT
+};
 
 IMPLEMENTATION
+
+var vga_palette: array[0..767] of byte;
 
 procedure fill_rgb_array {
     Quickly fills `rgb` with color codes;
@@ -78,25 +83,6 @@ begin
     end;
 end;
 
-var vga_palette: array[0..767] of byte;
-
-const MOVE_AWAY=$1017;
-      MOVE_BACK=$1012;
-
-procedure move_vga_palette(ax_instruction: word); assembler {
-    Saves and restores VGA palette via AX=1017h and AX=1012h instructions;
-    may not work on some hardware.
-};
-asm
-    mov ax, [ax_instruction]
-    mov bx, 0
-    mov cx, 256
-    mov es, [seg vga_palette]
-    mov dx, [offset vga_palette]
-    mov ax, 1017h; {push or pop #cx RGB colors to/from memory at es:dx}
-    int 10h
-end;
-
 const COPY_AWAY = $1015;
       COPY_BACK = $1010;
 
@@ -135,33 +121,25 @@ begin
     end;
 end;
 
-procedure graphmode(boolstate, palquicksave: boolean) {
+procedure graphmode(boolstate: boolean) {
     Switches between text and graphics modes.
     * with `boolstate=true` enters 320x200x216 graphics mode;
       with `boolstate=false` returns to text mode and
           restores default VGA palette.
-    * with `palquicksave=true` saves and restores VGA palette via
-          AX=1017h and AX=1012h instructions; may not work on some hardware;
-    * with `palquicksave=false` saves and restores VGA palette by
-          iterating over palette registers; this is more expensive but has
-          better hardware support.
+    Uses a relatively slow method to save and restore the VGA palette
+    (copy_vga_palette). For a quicker method, but with poorer hardware
+    support, use procedure graphmode() from unit GRAPHEXT.
 };
 begin
     if boolstate then begin
         asm mov ax, 13h end; {set 320x240x256 graphics mode}
         asm int 10h end;
-        if palquicksave then
-            move_vga_palette(MOVE_AWAY)
-        else
-            copy_vga_palette(COPY_AWAY);
+        copy_vga_palette(COPY_AWAY);
         resetcolors;
         fill_rgb_array;
     end;
     if not boolstate then begin
-        if palquicksave then
-            move_vga_palette(MOVE_BACK)
-        else
-            copy_vga_palette(COPY_BACK);
+        copy_vga_palette(COPY_BACK);
         asm mov ax, 3 end; {set 80x25x16 text mode}
         asm int 10h end;
     end;

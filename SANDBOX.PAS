@@ -7,7 +7,7 @@ var r, g, y: byte;
 begin
     write('Keep pressing <ENTER>');
     readln;
-    graphmode(true, false);
+    graphmode(true);
     for y := 0 to getmaxy do begin
         g := y div 40;
         for x := 0 to getmaxx do begin
@@ -42,7 +42,7 @@ begin
     block(30, 25, 270, 170, 9);
     write('Plot base light blue block');
     readln;
-    graphmode(false, false);
+    graphmode(false);
     write('Press <ENTER> to exit');
     readln;
 end.
