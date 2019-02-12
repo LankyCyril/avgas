@@ -1,5 +1,5 @@
 {$A-,B-,D+,E-,F-,G+,I-,L+,N-,O-,P-,Q-,R+,S-,T-,V+,X+,Y+}
-uses graphics;
+uses graphics, shapes;
 
 var r, g, y: byte;
     x: word;
@@ -25,6 +25,9 @@ begin
     reset_colors;
     readln;
     fillscreen(rgb[5,5,0]);
+    readln;
+    for y := 0 to getmaxy do
+        hline(y, getmaxx, y, 5);
     readln;
     graphmode(false, false);
     writeln('The pixel at (239, 77) was ', y);
