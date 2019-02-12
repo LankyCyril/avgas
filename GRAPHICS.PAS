@@ -86,17 +86,30 @@ end;
 const COPY_AWAY = $1015;
       COPY_BACK = $1010;
 
-procedure copy_vga_palette(ax_instruction: word) {
-    Saves and restores VGA palette by iterating over palette registers;
-    this is relatively expensive (avoids memory addressing from assembly
-    and instead transfers values one by one to/from a Pascal array after
-    polling each color register with assembly),
-    but has better hardware support.
+procedure graphmode(boolstate: boolean) {
+    Switches between text and graphics modes.
+    * with `boolstate=true` enters 320x200x216 graphics mode;
+      with `boolstate=false` returns to text mode and
+          restores default VGA palette.
+    Uses a relatively expensive method to save and restore the VGA palette
+    (avoids memory addressing from assembly and instead transfers values one
+    by one to/from a Pascal array after polling each color register with
+    assembly), but this has good hardware support.
+    For a quicker method, but with poorer hardware support, use
+    procedure graphmode() from unit GRAPHEXT.
 };
-var color, r, g, b: byte;
+var ax_instruction: word;
+    color, r, g, b: byte;
     shift: word;
 begin
-    for color := 0 to 255 do begin
+    if boolstate then begin
+        asm mov ax, 13h end; {set 320x240x256 graphics mode}
+        asm int 10h end;
+        ax_instruction := COPY_AWAY;
+    end
+    else
+        ax_instruction := COPY_BACK;
+    for color := 0 to 255 do begin {copy palette}
         shift := color * 3;
         asm mov ax, [ax_instruction] end; {get or set RGB of color #bl}
         asm mov bl, [color] end;
@@ -119,29 +132,13 @@ begin
             asm int 10h end;
         end;
     end;
-end;
-
-procedure graphmode(boolstate: boolean) {
-    Switches between text and graphics modes.
-    * with `boolstate=true` enters 320x200x216 graphics mode;
-      with `boolstate=false` returns to text mode and
-          restores default VGA palette.
-    Uses a relatively slow method to save and restore the VGA palette
-    (copy_vga_palette). For a quicker method, but with poorer hardware
-    support, use procedure graphmode() from unit GRAPHEXT.
-};
-begin
     if boolstate then begin
-        asm mov ax, 13h end; {set 320x240x256 graphics mode}
-        asm int 10h end;
-        copy_vga_palette(COPY_AWAY);
         resetcolors;
         fill_rgb_array;
-    end;
-    if not boolstate then begin
-        copy_vga_palette(COPY_BACK);
-        asm mov ax, 3 end; {set 80x25x16 text mode}
-        asm int 10h end;
+    end
+    else asm
+        mov ax, 3; {set 80x25x16 text mode}
+        int 10h
     end;
 end;
 

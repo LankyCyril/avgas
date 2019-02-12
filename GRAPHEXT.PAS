@@ -22,7 +22,8 @@ procedure graphmode(boolstate: boolean) {
       with `boolstate=false` returns to text mode and
           restores default VGA palette.
     Uses a fast native method to save and restore the VGA palette
-    (move_vga_palette). However, this is dependent on specific hardware
+    (with AX=1017h and AX=1012h, by writing/reading the full palette to/from
+    an array at es:dx). However, this is dependent on the specific hardware
     implementation and may not work. For a more reliable, but slower, method
     use procedure graphmode() from unit GRAPHICS. In other words, if you are
     falling back to the slower method, just don't import GRAPHEXT.
