@@ -7,12 +7,16 @@ procedure draw_blocks {
       but also because of the two nested loops;
     * by drawing each vertical line with an assembly loop;
       this is faster, but:
-      * requires a lot of interrupts (not sure if it should be slower than,
-        say, writing to memory);
+      * requires a lot of 10h interrupts (not sure if it should be slower
+        than writing to memory);
       * drawing vertical lines is a-ok, drawing horizontal lines is trickier,
         because the CL register is used for the loop counter as well as
         the x dimension iteration;
       * does not safeguard against getmaxy overrun (not implemented here);
+      * setting x or y to negative values does not result in overrun;
+        instead, it results in a runtime error (when trying to move to a
+        register); this should not be a problem if x and y are not set
+        dynamically;
     * by drawing each horizontal line with fillchar;
       this is the fastest method, although it, on the other hand,
       * only makes it simple to draw one horizontal line at a time;
