@@ -2,6 +2,11 @@ UNIT GRAPHEXT;
 
 INTERFACE
 
+var rgb: array[0..5, 0..5, 0..5] of byte {
+    holds color codes associated with R, G, B values: `rgb[3,0,5]`;
+    avoids function call overheads (if it were function(r, g, b)) or
+    having to compute values inline each time
+};
 procedure graphmode(boolstate: boolean) {
     switches between text and graphics modes; redefines the procedure
     from unit GRAPHICS
@@ -28,6 +33,9 @@ procedure graphmode(boolstate: boolean) {
     use procedure graphmode() from unit GRAPHICS. In other words, if you are
     falling back to the slower method, just don't import GRAPHEXT.
 };
+type FlatRGBArray = array[0..215] of byte;
+var pflatarray: ^FlatRGBArray;
+    color: byte;
 begin
     if boolstate then asm
         mov ax, 13h; {set 320x240x256 graphics mode}
@@ -45,8 +53,10 @@ begin
         int 10h
     end;
     if boolstate then begin
+        pflatarray := @rgb; {fill `rgb` as if it was a one-dimensional array}
+            for color := 0 to 215 do
+                pflatarray^[color] := color + 16;
         resetcolors;
-        fill_rgb_array;
     end
     else asm
         mov ax, 3; {set 80x25x16 text mode}

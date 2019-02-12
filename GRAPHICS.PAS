@@ -5,7 +5,9 @@ UNIT GRAPHICS {
     sets the VGA palette to an RGB array with 6 steps of R, G, B values:
     colors from 16 to 231 are all possible combinations of these steps;
     colors from 0 to 15 are preserved (16 basic colors);
-    colors from 232 to 255 are undefined.
+    colors from 232 to 255 are wildcards.
+    This unit currently compiles under 16-bit Turbo Pascal
+    to a neat 3200 bytes!
 };
 
 INTERFACE
@@ -36,26 +38,10 @@ procedure fade(smoothing: byte) {
 procedure resetcolors {
     restores full saturation 216 color palette
 };
-procedure fill_rgb_array {
-    internal function, exposed only for use in module GRAPHEXT
-};
 
 IMPLEMENTATION
 
 var vga_palette: array[0..767] of byte;
-
-procedure fill_rgb_array {
-    Quickly fills `rgb` with color codes;
-    allows `putpixel(x, y, rgb[3,0,5])` etc
-};
-type FlatRGBArray = array[0..215] of byte;
-var pflatarray: ^FlatRGBArray;
-    i: byte;
-begin
-    pflatarray := @rgb; {fill `rgb` as if it was a one-dimensional array}
-    for i := 0 to 215 do
-        pflatarray^[i] := i + 16;
-end;
 
 procedure resetcolors {
     Sets the VGA palette to an RGB array with 6 steps of each color
@@ -98,9 +84,11 @@ procedure graphmode(boolstate: boolean) {
     For a quicker method, but with poorer hardware support, use
     procedure graphmode() from unit GRAPHEXT.
 };
+type FlatRGBArray = array[0..215] of byte;
 var ax_instruction: word;
     color, r, g, b: byte;
     shift: word;
+    pflatarray: ^FlatRGBArray;
 begin
     if boolstate then begin
         asm mov ax, 13h end; {set 320x240x256 graphics mode}
@@ -110,7 +98,7 @@ begin
     else
         ax_instruction := COPY_BACK;
     for color := 0 to 255 do begin {copy palette}
-        shift := color * 3;
+        shift := color shl 1 + color;
         asm mov ax, [ax_instruction] end; {get or set RGB of color #bl}
         asm mov bl, [color] end;
         if ax_instruction = COPY_AWAY then begin
@@ -133,8 +121,10 @@ begin
         end;
     end;
     if boolstate then begin
+        pflatarray := @rgb; {fill `rgb` as if it was a one-dimensional array}
+            for color := 0 to 215 do
+                pflatarray^[color] := color + 16;
         resetcolors;
-        fill_rgb_array;
     end
     else asm
         mov ax, 3; {set 80x25x16 text mode}
