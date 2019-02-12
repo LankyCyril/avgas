@@ -14,7 +14,9 @@ const getmaxx = 319;
       getmaxy = 199;
 
 var rgb: array[0..5, 0..5, 0..5] of byte {
-    holds color codes associated with R, G, B values: `rgb[3,0,5]`
+    holds color codes associated with R, G, B values: `rgb[3,0,5]`;
+    avoids function call overheads (if it were function(r, g, b)) or
+    having to compute values inline each time
 };
 procedure graphmode(boolstate, palquicksave: boolean) {
     switches between text and graphics modes
