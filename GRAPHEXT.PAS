@@ -49,7 +49,6 @@ begin
         mov cx, 256
         mov es, [seg vga_palette]
         mov dx, [offset vga_palette]
-        mov ax, 1017h; {push/pop #cx RGB colors to/from memory at es:dx}
         int 10h
     end;
     if boolstate then begin
