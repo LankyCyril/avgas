@@ -33,7 +33,7 @@ procedure fillscreen(color: byte) {
 procedure fade(smoothing: byte) {
     darkens and washes out VGA palette
 };
-procedure reset_colors {
+procedure resetcolors {
     restores full saturation 216 color palette
 };
 
@@ -47,12 +47,12 @@ type FlatRGBArray = array[0..215] of byte;
 var pflatarray: ^FlatRGBArray;
     i: byte;
 begin
-    pflatarray := @rgb[0];
+    pflatarray := @rgb; {fill `rgb` as if it was a one-dimensional array}
     for i := 0 to 215 do
         pflatarray^[i] := i + 16;
 end;
 
-procedure reset_colors {
+procedure resetcolors {
     Sets the VGA palette to an RGB array with 6 steps of each color
 };
 var r, g, b: byte;
@@ -154,7 +154,7 @@ begin
             move_vga_palette(MOVE_AWAY)
         else
             copy_vga_palette(COPY_AWAY);
-        reset_colors;
+        resetcolors;
         fill_rgb_array;
     end;
     if not boolstate then begin

@@ -28,7 +28,7 @@ begin
         fade(0);
         readln;
     end;
-    reset_colors;
+    resetcolors;
     write('Restore the 216 colors');
     readln;
     fillscreen(rgb[5,5,0]);
