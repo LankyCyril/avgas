@@ -31,8 +31,8 @@ begin
     resetcolors;
     write('Restore the 216 colors');
     readln;
-    fillscreen(rgb[5,5,0]);
-    write('Fill screen with extended yellow');
+    fillscreen(rgb[5,0,5]);
+    write('Fill screen with extended pink');
     readln;
     y := 0;
     while hline(y, getmaxx, y, rgb[y div 36 mod 6, 0, y mod 6]) do

@@ -7,7 +7,7 @@ UNIT GRAPHICS {
     colors from 0 to 15 are preserved (16 basic colors);
     colors from 232 to 255 are wildcards.
     This unit currently compiles under 16-bit Turbo Pascal
-    to a neat 3200 bytes!
+    just to 3168 bytes!
 };
 
 INTERFACE
@@ -43,12 +43,54 @@ IMPLEMENTATION
 
 var vga_palette: array[0..767] of byte;
 
-procedure resetcolors {
+procedure resetcolors; assembler {
     Sets the VGA palette to an RGB array with 6 steps of each color
 };
-var r, g, b: byte;
-begin
-    asm mov ax, 1010h end; {set RGB of color #bx}
+asm
+    mov bx, 16; {start with color 16}
+    @@paletteloop:
+        mov ax, bx; {dividend}
+        sub ax, 16
+        mov dl, 6; {divisor}
+        div dl
+        mov cl, ah; {move remainder to blue register}
+        mov ah, 0; {make sure ax = al, our quotient}
+        div dl
+        mov ch, ah; {move remainder to green register}
+        mov dh, al; {move quotient to red register}
+        ; {now exponentiate red}
+        push cx; {cl will be used for SHL here, but we need it later}
+        mov cl, dh
+        add cl, 1
+        mov dh, 1
+        shl dh, cl
+        sub dh, 2
+        pop cx; {restore cl}
+        ; {now exponentiate green}
+        push cx; {cl will be used for SHL here, but we need it later}
+        mov cl, ch
+        add cl, 1
+        mov ch, 1
+        shl ch, cl
+        sub ch, 2
+        mov ah, ch; {NB: when we pop cx, it overwrites ch; this prevents it}
+        pop cx
+        mov ch, ah
+        ; {now exponentiate blue:}
+        add cl, 1
+        mov dl, 1; {cl is used for SHL, so we move value to unused register}
+        shl dl, cl
+        sub dl, 2
+        mov cl, dl; {put blue where it belongs}
+        ; {set RGB color of #bx:}
+        mov ax, 1010h
+        int 10h
+        add bx, 1; {proceed to next color}
+    cmp bx, 232; {until all 216 colors filled}
+    jl @@paletteloop
+end;
+
+(*  asm mov ax, 1010h end; {set RGB of color #bx}
     asm mov bx, 16 end; {only operate on extended colors}
     asm mov dh, 0 end; {red}
     for r := 0 to 5 do begin
@@ -66,8 +108,7 @@ begin
             asm add ch, 1 end;
         end;
         asm add dh, 1 end;
-    end;
-end;
+    end;*)
 
 const COPY_AWAY = $1015;
       COPY_BACK = $1010;
