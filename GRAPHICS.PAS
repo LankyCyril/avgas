@@ -59,30 +59,28 @@ asm
         mov ch, ah; {move remainder to green register}
         mov dh, al; {move quotient to red register}
         ; {now exponentiate red}
-        push cx; {cl will be used for SHL here, but we need it later}
+        mov dl, cl; {cl is used for SHL, but we'll need it later}
         mov cl, dh
         add cl, 1
         mov dh, 1
         shl dh, cl
         sub dh, 2
-        pop cx; {restore cl}
+        mov cl, dl; {restore rescued value of cl}
         ; {now exponentiate green}
-        push cx; {cl will be used for SHL here, but we need it later}
+        mov dl, cl; {cl is used for SHL, but we'll need it later}
         mov cl, ch
         add cl, 1
         mov ch, 1
         shl ch, cl
         sub ch, 2
-        mov ah, ch; {NB: when we pop cx, it overwrites ch; this prevents it}
-        pop cx
-        mov ch, ah
+        mov cl, dl; {restore rescued value of cl}
         ; {now exponentiate blue:}
         add cl, 1
-        mov dl, 1; {cl is used for SHL, so we move value to unused register}
+        mov dl, 1; {cl is used for SHL, so we calculate in an unused register}
         shl dl, cl
         sub dl, 2
         mov cl, dl; {put blue where it belongs}
-        ; {set RGB color of #bx:}
+        ; {set RGB color of #bx}
         mov ax, 1010h
         int 10h
         add bx, 1; {proceed to next color}
