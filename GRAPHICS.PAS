@@ -6,8 +6,8 @@ UNIT GRAPHICS {
     colors from 16 to 231 are all possible combinations of these steps;
     colors from 0 to 15 are preserved (16 basic colors);
     colors from 232 to 255 are wildcards.
-    This unit currently compiles under 16-bit Turbo Pascal
-    just to 1488 bytes!
+    This unit currently compiles under 16-bit Turbo Pascal just to 1488 bytes!
+    (and a minimal EXE using this module comes out to 1504 bytes).
 };
 
 INTERFACE
