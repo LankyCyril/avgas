@@ -1,4 +1,4 @@
-{$A-,B-,D+,E-,F-,G+,I-,L+,N-,O-,P-,Q-,R+,S-,T-,V+,X+,Y+}
+{$A-,B-,D-,E-,F-,G+,I-,L-,N-,O-,P-,Q-,R-,S-,T-,V-,X-,Y-}
 UNIT GRAPHICS {
     Implements a simplistic API for the VGA 320x200 pixel, 216 color mode.
     Actual number of available colors in this mode is 256, but this unit
@@ -7,7 +7,7 @@ UNIT GRAPHICS {
     colors from 0 to 15 are preserved (16 basic colors);
     colors from 232 to 255 are wildcards.
     This unit currently compiles under 16-bit Turbo Pascal
-    just to 3168 bytes!
+    just to 1488 bytes!
 };
 
 INTERFACE
