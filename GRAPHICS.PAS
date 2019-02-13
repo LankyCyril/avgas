@@ -88,26 +88,6 @@ asm
     jl @@paletteloop
 end;
 
-(*  asm mov ax, 1010h end; {set RGB of color #bx}
-    asm mov bx, 16 end; {only operate on extended colors}
-    asm mov dh, 0 end; {red}
-    for r := 0 to 5 do begin
-        asm shl dh, 1 end;
-        asm mov ch, 0 end; {green}
-        for g := 0 to 5 do begin
-            asm shl ch, 1 end;
-            asm mov cl, 0 end; {blue}
-            for b := 0 to 5 do asm
-                shl cl, 1
-                int 10h
-                add bx, 1
-                add cl, 1
-            end;
-            asm add ch, 1 end;
-        end;
-        asm add dh, 1 end;
-    end;*)
-
 const COPY_AWAY = $1015;
       COPY_BACK = $1010;
 
