@@ -1,6 +1,6 @@
 {$A-,B-,D-,E-,F-,G+,I-,L-,N-,O-,P-,Q-,R-,S-,T-,V-,X-,Y-}
 UNIT GRAPHICS {
-    Implements a simplistic API for the VGA 320x200 pixel, 216 color mode.
+    Implements a simplistic API for the VGA 320x200 pixel, 216+ color mode.
     Actual number of available colors in this mode is 256, but this unit
     sets the VGA palette to an RGB array with 6 steps of R, G, B values:
     colors from 16 to 231 are all possible combinations of these steps;
@@ -85,7 +85,7 @@ end;
 
 procedure graphmode(const boolstate: boolean); assembler {
     Switches between text and graphics modes;
-    * graphmode(true) enters 320x200x216 graphics mode;
+    * graphmode(true) enters 320x200x216+ graphics mode;
     * graphmode(false) returns to text mode and restores default VGA palette.
 };
 const {make local variables point to global ones}
@@ -93,7 +93,7 @@ const {make local variables point to global ones}
       rgb_ptr: ^byte = @rgb;
 asm
     cld                      {clear DF, auto-advance arrays on write}
-    mov bx, 0                {start with first color}
+    mov bl, 0                {start with first color}
     cmp boolstate, 0
     je  @set_textmode
     @set_graphmode:
@@ -102,17 +102,15 @@ asm
         push es              {ES will be overwritten by LES}
         les  di, pal_ptr     {point [ES:DI] to `vga_palette`}
         @loop_copyaway:      {fill `vga_palette` with VGA palette}
-            mov   ax, 1015h  {get RGB of color #BL (#BX)}
+            mov   ax, 1015h  {get RGB of color #BL}
             int   10h
             mov   al, dh     {DH = red}
-            stosb            {copy AL into next pos of `vga_palette`}
-            mov   al, ch     {CH = green}
-            stosb            {copy AL into next pos of `vga_palette`}
-            mov   al, cl     {CL = blue}
-            stosb            {copy AL into next pos of `vga_palette`}
-            add   bx, 1      {proceed to next color}
-            cmp   bx, 256    {until all colors 0..255 processed}
-            jl    @loop_copyaway
+            stosb            {copy AL into next byte of `vga_palette`}
+            mov   ax, cx     {CX = green:blue}
+            stosw            {copy AX into next two bytes of `vga_palette`}
+            add   bl, 1      {proceed to next color}
+            cmp   bl, 255    {until all colors 0..255 processed}
+            jne   @loop_copyaway
         les   di, rgb_ptr    {point [ES:DI] to `rgb`}
         mov   al, 16         {start with first extended color}
         @loop_fillrgb:
@@ -127,17 +125,15 @@ asm
         push ds              {DS will be overwritten by LDS}
         lds  si, pal_ptr     {point [DS:SI] to `vga_palette`}
         @loop_copyback:      {fill VGA palette with stored `vga_palette`}
-            lodsb            {load next byte from `palette` into AL}
+            lodsb            {load next byte from `vga_palette` into AL}
             mov   dh, al     {DH = red}
-            lodsb            {load next byte from `palette` into AL}
-            mov   ch, al     {CH = green}
-            lodsb            {load next byte from `palette` into AL}
-            mov   cl, al     {CL = blue}
-            mov   ax, 1010h  {set RGB of color #BL (#BX)}
+            lodsw            {load next two bytes from `va_palette` into AX}
+            mov   cx, ax     {CX = green:blue}
+            mov   ax, 1010h  {set RGB of color #BL}
             int   10h
-            add   bx, 1      {proceed to next color}
-            cmp   bx, 256    {until all colors 0..255 processed}
-            jl    @loop_copyback
+            add   bl, 1      {proceed to next color}
+            cmp   bl, 255    {until all colors 0..255 processed}
+            jne   @loop_copyback
         pop  ds              {restore DS}
         mov  ax, 3           {set 80x25x16 text mode}
         int  10h
