@@ -1,4 +1,4 @@
-uses graphics, shapes;
+uses graphics, shapes, palettes;
 
 var r, g, y: byte;
     x: word;
@@ -7,6 +7,7 @@ begin
     write('Keep pressing <ENTER>');
     readln;
     graphmode(true);
+    set_palette(OUTRUN);
     for y := 0 to getmaxy do begin
         g := y div 34 mod 6;
         for x := 0 to getmaxx do begin
