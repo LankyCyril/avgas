@@ -6,7 +6,7 @@ UNIT GRAPHICS {
     colors from 16 to 231 are all possible combinations of these steps;
     colors from 0 to 15 are preserved (16 basic colors);
     colors from 232 to 255 are wildcards.
-    This unit currently compiles under 16-bit Turbo Pascal just to 1488 bytes!
+    This unit currently compiles under 16-bit Turbo Pascal to just 1392 bytes!
     (and a minimal EXE using this module comes out to 1504 bytes).
 };
 
@@ -31,9 +31,6 @@ function getpixel(x, y: word; var color: byte): boolean {
 };
 procedure fillscreen(color: byte) {
     fills screen with `color`; fillscreen(0) can be used to clear screen
-};
-procedure fade(smoothing: byte) {
-    darkens and washes out VGA palette
 };
 procedure resetcolors {
     restores full saturation 216 color palette
@@ -182,27 +179,6 @@ procedure fillscreen(color: byte) {
 };
 begin
     fillchar(mem[$A000:0], 64000, color);
-end;
-
-procedure fade(smoothing: byte); assembler {
-    Darkens and washes out VGA palette
-};
-asm
-    mov bx, 231; {color number}
-    @@fadeloop:
-        mov ax, 1015h; {get RGB of color #bl (#bx)}
-        int 10h
-        add dh, [smoothing]; {red}
-        add ch, [smoothing]; {green}
-        add cl, [smoothing]; {blue}
-        shr dh, 1
-        shr cx, 1
-        mov ax, 1010h; {set RGB of color #bl (#bx)}
-        int 10h
-        sub bx, 1; {previous color}
-        mov cl, bl; {synchronize loop counter with color number}
-        sub cl, 16; {except make sure we stop before base 16 colors}
-    jnz @@fadeloop
 end;
 
 end.

@@ -2,8 +2,15 @@ UNIT PALETTES;
 
 INTERFACE
 
-procedure showpalette;
-procedure setpalette(const palette: array of byte);
+procedure showpalette {
+    displays the current 216 color palette in a grid
+};
+procedure fade(smoothing: byte) {
+    darkens and washes out VGA palette
+};
+procedure setpalette(const palette: array of byte) {
+    sets the 216 palette to values stored in `palette`
+};
 
 const OUTRUN: array[0..647] of byte = (
        0,  0,  0,  0, 48, 49,  0, 59, 59,  0, 63, 61,  0, 63, 63,  1, 35, 44,
@@ -57,6 +64,27 @@ begin
         y := (color - 16) div 18 * 14 + 16;
         block(x, y, x+12, y+12, color);
     end;
+end;
+
+procedure fade(smoothing: byte); assembler {
+    Darkens and washes out VGA palette
+};
+asm
+    mov bx, 231; {color number}
+    @@fadeloop:
+        mov ax, 1015h; {get RGB of color #bl (#bx)}
+        int 10h
+        add dh, [smoothing]; {red}
+        add ch, [smoothing]; {green}
+        add cl, [smoothing]; {blue}
+        shr dh, 1
+        shr cx, 1
+        mov ax, 1010h; {set RGB of color #bl (#bx)}
+        int 10h
+        sub bx, 1; {previous color}
+        mov cl, bl; {synchronize loop counter with color number}
+        sub cl, 16; {except make sure we stop before base 16 colors}
+    jnz @@fadeloop
 end;
 
 procedure setpalette(const palette: array of byte); assembler;
