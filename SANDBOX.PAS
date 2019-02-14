@@ -12,7 +12,7 @@ begin
         g := y div 34 mod 6;
         for x := 0 to getmaxx do begin
             r := x div 54;
-            putpixel(x, y, rgb[r,g,0]);
+            putpixel(x, y, rgb[r,0,g]);
         end;
     end;
     getpixel(239, 77, y);
