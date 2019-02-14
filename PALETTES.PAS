@@ -2,17 +2,19 @@ UNIT PALETTES;
 
 INTERFACE
 
+type Palette216 = array[0..647] of byte;
+
 procedure showpalette {
     displays the current 216 color palette in a grid
 };
 procedure fade(smoothing: byte) {
     darkens and washes out VGA palette
 };
-procedure setpalette(const palette: array of byte) {
+procedure setpalette(const palette: Palette216) {
     sets the 216 palette to values stored in `palette`
 };
 
-const OUTRUN: array[0..647] of byte = (
+const OUTRUN: Palette216 = (
        0,  0,  0,  0, 48, 49,  0, 59, 59,  0, 63, 61,  0, 63, 63,  1, 35, 44,
        1, 48, 51,  1, 59, 60,  1, 63, 63,  2,  2,  7,  2,  8, 29,  2, 10, 29,
        2, 11, 30,  2, 14, 39,  3,  0,  6,  3, 11, 38,  3, 14, 31,  3, 20, 38,
@@ -87,7 +89,7 @@ asm
     jnz @@fadeloop
 end;
 
-procedure setpalette(const palette: array of byte); assembler;
+procedure setpalette(const palette: Palette216); assembler;
 asm
     push ds          {DS is used by LDS, preserve value for after we're done}
     cld              {clear direction flag, auto-advance `palette` on read}
