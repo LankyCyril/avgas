@@ -6,7 +6,7 @@ UNIT GRAPHICS {
     colors from 16 to 231 are all possible combinations of these steps;
     colors from 0 to 15 are preserved (16 basic colors);
     colors from 232 to 255 are wildcards.
-    Currently compiles under 16-bit Turbo Pascal to just 1248 bytes!
+    Currently compiles under 16-bit Turbo Pascal to just 1232 bytes!
 };
 
 INTERFACE
@@ -89,38 +89,37 @@ procedure graphmode(boolstate: boolean) {
       with `boolstate=false` returns to text mode and
           restores default VGA palette.
 };
-type FlatRGBArray = array[0..215] of byte;
-var color: byte;
-    pal_ptr: ^byte;
-    pflatarray: ^FlatRGBArray;
+var pal_ptr, rgb_ptr: ^byte;
 begin
-    pal_ptr := @vga_palette; {make local variable point to global}
-    if boolstate then begin
-        asm
-            mov ax, 13h          {set 320x240x256 graphics mode}
-            int 10h
-            push es              {ES will be overwritten by LES}
-            cld                  {clear DF, auto-advance arrays on write}
-            les  di, pal_ptr     {point [ES:DI] to `vga_palette`}
-            mov  bx, 0           {start with first color}
-            @iterate_copyaway:   {fill VGA palette with stored `vga_palette`}
-                mov   ax, 1015h  {get RGB of color #BL (#BX)}
-                int   10h
-                mov   al, dh     {DH = red}
-                stosb            {copy AL into next pos of `vga_palette`}
-                mov   al, ch     {CH = green}
-                stosb            {copy AL into next pos of `vga_palette`}
-                mov   al, cl     {CL = blue}
-                stosb            {copy AL into next pos of `vga_palette`}
-                add   bx, 1      {proceed to next color}
-                cmp   bx, 256    {until all colors 0..255 processed}
-                jl @iterate_copyaway
-            pop es               {restore ES}
-        end;
-        pflatarray := @rgb; {fill `rgb` as if it was a one-dimensional array}
-            for color := 0 to 215 do
-                pflatarray^[color] := color + 16;
-        resetcolors;
+    pal_ptr := @vga_palette; {make local variables point to global}
+    rgb_ptr := @rgb;
+    if boolstate then asm
+        mov ax, 13h          {set 320x240x256 graphics mode}
+        int 10h
+        push es              {ES will be overwritten by LES}
+        cld                  {clear DF, auto-advance arrays on write}
+        les  di, pal_ptr     {point [ES:DI] to `vga_palette`}
+        mov  bx, 0           {start with first color}
+        @iterate_copyaway:   {fill `vga_palette` with VGA palette}
+            mov   ax, 1015h  {get RGB of color #BL (#BX)}
+            int   10h
+            mov   al, dh     {DH = red}
+            stosb            {copy AL into next pos of `vga_palette`}
+            mov   al, ch     {CH = green}
+            stosb            {copy AL into next pos of `vga_palette`}
+            mov   al, cl     {CL = blue}
+            stosb            {copy AL into next pos of `vga_palette`}
+            add   bx, 1      {proceed to next color}
+            cmp   bx, 256    {until all colors 0..255 processed}
+            jl @iterate_copyaway
+        les di, rgb_ptr      {point [ES:DI] to `rgb`}
+        mov al, 16           {start with first extended color}
+        @fillerloop:
+            stosb            {put color number into next flat pos of `rgb`}
+            add al, 1        {proceed to next color}
+            cmp al, 232      {until all extended colors processed}
+            jb @fillerloop
+        pop es
     end
     else asm
         push ds              {DS will be overwritten by LDS}
@@ -143,6 +142,8 @@ begin
         mov ax, 3            {set 80x25x16 text mode}
         int 10h
     end;
+    if boolstate then
+        resetcolors;
 end;
 
 function putpixel(x, y: word; color: byte): boolean {
