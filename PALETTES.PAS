@@ -2,7 +2,8 @@ UNIT PALETTES;
 
 INTERFACE
 
-procedure set_palette(const palette: array of byte);
+procedure showpalette;
+procedure setpalette(const palette: array of byte);
 
 const OUTRUN: array[0..647] of byte = (
        0,  0,  0,  0, 48, 49,  0, 59, 59,  0, 63, 61,  0, 63, 63,  1, 35, 44,
@@ -45,12 +46,24 @@ const OUTRUN: array[0..647] of byte = (
 
 IMPLEMENTATION
 
-procedure set_palette(const palette: array of byte); assembler;
+uses graphics, shapes;
+
+procedure showpalette;
+var x, y: word;
+    color: byte;
+begin
+    for color := 16 to 231 do begin
+        x := (color - 16) mod 18 * 14 + 34;
+        y := (color - 16) div 18 * 14 + 16;
+        block(x, y, x+12, y+12, color);
+    end;
+end;
+
+procedure setpalette(const palette: array of byte); assembler;
 asm
     push ds          {DS is used by LDS, preserve value for after we're done}
     cld              {clear direction flag, auto-advance `palette` on read}
     lds  si, palette {make [ds:si] point to `palette`}
-    mov  cl, 216     {move known palette length into loop counter register}
     mov  bx, 16      {start with first extended color}
     @iterate:
         lodsb            {load next byte from `palette` into AL}
@@ -62,7 +75,8 @@ asm
         mov   ax, 1010h  {set RGB of color #bl (#bx)}
         int   10h
         add   bx, 1      {proceed to next color}
-    loop @iterate
+        cmp   bx, 232
+    jl @iterate
     pop  ds          {restore DS}
 end;
 

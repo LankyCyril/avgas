@@ -1,46 +1,29 @@
 uses graphics, shapes, palettes;
 
-var r, g, y: byte;
-    x: word;
+var i: byte;
 
 begin
     write('Keep pressing <ENTER>');
     readln;
     graphmode(true);
-    set_palette(OUTRUN);
-    for y := 0 to getmaxy do begin
-        g := y div 34 mod 6;
-        for x := 0 to getmaxx do begin
-            r := x div 54;
-            putpixel(x, y, rgb[r,0,g]);
-        end;
-    end;
-    getpixel(239, 77, y);
-    writeln('Red and green in 6 steps each');
-    write('The pixel at (239, 77) is ', y);
+    block(32, 14, 286, 184, 15);
+    block(33, 15, 285, 183, 0);
+    showpalette;
+    write('Showcase default palette');
     readln;
-    for x := 0 to 9 do
-        vline(x*30 + 20, 15, 185, 1);
-    write('Plot vertical lines with base blue');
-    readln;
-    for x := 1 to 4 do begin
-        write('Fade the 216 colors ', x, ' times');
+    for i := 1 to 4 do begin
+        write('Fade the 216 colors ', i, ' times');
         fade(0);
         readln;
     end;
     resetcolors;
     write('Restore the 216 colors');
     readln;
-    fillscreen(rgb[5,0,5]);
-    write('Fill screen with extended pink');
+    setpalette(OUTRUN);
+    write('Change palette');
     readln;
-    y := 0;
-    while hline(y, getmaxx, y, rgb[y div 36 mod 6, 0, y mod 6]) do
-        inc(y);
-    write('Gradient plot horizontal offset lines');
-    readln;
-    block(30, 25, 270, 170, 9);
-    write('Plot base light blue block');
+    fillscreen(rgb[2,0,2]);
+    write('Fill screen with extended purple');
     readln;
     graphmode(false);
     write('Press <ENTER> to exit');
