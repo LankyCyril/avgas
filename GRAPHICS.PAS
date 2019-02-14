@@ -6,8 +6,7 @@ UNIT GRAPHICS {
     colors from 16 to 231 are all possible combinations of these steps;
     colors from 0 to 15 are preserved (16 basic colors);
     colors from 232 to 255 are wildcards.
-    This unit currently compiles under 16-bit Turbo Pascal to just 1392 bytes!
-    (and a minimal EXE using this module comes out to 1504 bytes).
+    Currently compiles under 16-bit Turbo Pascal to just 1248 bytes!
 };
 
 INTERFACE
@@ -36,9 +35,9 @@ procedure resetcolors {
     restores full saturation 216 color palette
 };
 
-var vga_palette: array[0..767] of byte;
-
 IMPLEMENTATION
+
+var vga_palette: array[0..767] of byte;
 
 procedure resetcolors; assembler {
     Sets the VGA palette to an RGB array with 6 steps of each color
@@ -85,65 +84,64 @@ asm
     jl @@paletteloop
 end;
 
-const COPY_AWAY = $1015;
-      COPY_BACK = $1010;
-
 procedure graphmode(boolstate: boolean) {
     Switches between text and graphics modes.
     * with `boolstate=true` enters 320x200x216 graphics mode;
       with `boolstate=false` returns to text mode and
           restores default VGA palette.
-    Uses a relatively expensive method to save and restore the VGA palette
-    (avoids memory addressing from assembly and instead transfers values one
-    by one to/from a Pascal array after polling each color register with
-    assembly), but this has good hardware support.
-    For a quicker method, but with poorer hardware support, use
-    procedure graphmode() from unit GRAPHEXT.
 };
 type FlatRGBArray = array[0..215] of byte;
-var ax_instruction: word;
-    color, r, g, b: byte;
-    shift: word;
+var color: byte;
+    pal_ptr: ^byte;
     pflatarray: ^FlatRGBArray;
 begin
+    pal_ptr := @vga_palette; {make local variable point to global}
     if boolstate then begin
-        asm mov ax, 13h end; {set 320x240x256 graphics mode}
-        asm int 10h end;
-        ax_instruction := COPY_AWAY;
-    end
-    else
-        ax_instruction := COPY_BACK;
-    for color := 0 to 255 do begin {copy palette}
-        shift := color shl 1 + color;
-        asm mov ax, [ax_instruction] end; {get or set RGB of color #bl}
-        asm mov bl, [color] end;
-        if ax_instruction = COPY_AWAY then begin
-            asm int 10h end;
-            asm mov [r], dh end;
-            asm mov [g], ch end;
-            asm mov [b], cl end;
-            vga_palette[shift] := r;
-            vga_palette[shift+1] := g;
-            vga_palette[shift+2] := b;
+        asm
+            mov ax, 13h          {set 320x240x256 graphics mode}
+            int 10h
+            push es
+            cld                  {clear DF, auto-advance arrays on write}
+            les  di, pal_ptr     {point [es:di] to `vga_palette`}
+            mov  bx, 0           {start with first color}
+            @iterate_copyaway:   {fill VGA palette with stored `vga_palette`}
+                mov   ax, 1015h  {get RGB of color #bl (#bx)}
+                int   10h
+                mov   al, dh     {dh = read}
+                stosb            {copy AL into next pos of `vga_palette`}
+                mov   al, ch     {ch = green}
+                stosb            {copy AL into next pos of `vga_palette`}
+                mov   al, cl     {cl = blue}
+                stosb            {copy AL into next pos of `vga_palette`}
+                add   bx, 1      {proceed to next color}
+                cmp   bx, 256
+            jl @iterate_copyaway
+            pop es               {restore ES}
         end;
-        if ax_instruction = COPY_BACK then begin
-            r := vga_palette[shift];
-            g := vga_palette[shift+1];
-            b := vga_palette[shift+2];
-            asm mov dh, [r] end;
-            asm mov ch, [g] end;
-            asm mov cl, [b] end;
-            asm int 10h end;
-        end;
-    end;
-    if boolstate then begin
         pflatarray := @rgb; {fill `rgb` as if it was a one-dimensional array}
             for color := 0 to 215 do
                 pflatarray^[color] := color + 16;
         resetcolors;
     end
     else asm
-        mov ax, 3; {set 80x25x16 text mode}
+        push ds              {DS will be overwritten by LDS}
+        cld                  {clear DF, auto-advance arrays on read}
+        lds  si, pal_ptr     {point [ds:si] to `vga_palette`}
+        mov  bx, 0           {start with first color}
+        @iterate_copyback:   {fill VGA palette with stored `vga_palette`}
+            lodsb            {load next byte from `palette` into AL}
+            mov   dh, al     {dh = red}
+            lodsb            {load next byte from `palette` into AL}
+            mov   ch, al     {ch = green}
+            lodsb            {load next byte from `palette` into AL}
+            mov   cl, al     {cl = blue}
+            mov   ax, 1010h  {set RGB of color #bl (#bx)}
+            int   10h
+            add   bx, 1      {proceed to next color}
+            cmp   bx, 256
+        jl @iterate_copyback
+        pop  ds              {restore DS}
+        mov ax, 3            {set 80x25x16 text mode}
         int 10h
     end;
 end;

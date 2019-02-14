@@ -1,4 +1,4 @@
-uses crt, graphics, graphext;
+uses crt, graphics;
 
 procedure draw_blocks {
     Tests block drawing:
