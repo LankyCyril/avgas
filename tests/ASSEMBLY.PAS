@@ -118,8 +118,30 @@ asm
     pop ds
 end;
 
+const a239: array[0..2] of byte = (2, 3, 9);
+
+procedure iter_array(const arr: array of byte; length: byte); assembler;
+asm
+    push ds
+    cld
+    lds si, arr; {make [ds:si] point to `arr`}
+    cmp [length], 0
+    je @terminate
+    mov cl, [length]; {move length of array into loop counter register}
+  @iterate:
+    lodsb; {load next byte from arr}
+    mov dl, al
+    add dl, '0'
+    mov al, 0
+    mov ah, 2
+    int 21h
+    loop @iterate
+  @terminate:
+    pop ds
+end;
+
 begin
     clrscr;
-    iter_string('this works!');
+    iter_array(a239, 3);
     readln;
 end.
