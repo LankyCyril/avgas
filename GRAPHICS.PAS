@@ -44,7 +44,7 @@ procedure resetcolors; assembler {
 };
 asm
     mov bx, 16        {start with color 16}
-    @paletteloop:
+    @loop_resetcolors:
         mov ax, bx    {dividend}
         sub ax, 16
         mov dl, 6     {divisor}
@@ -80,7 +80,7 @@ asm
         int 10h
         add bx, 1     {proceed to next color}
         cmp bx, 232   {until all 216 colors filled}
-        jl @paletteloop
+        jl @loop_resetcolors
 end;
 
 procedure graphmode(boolstate: boolean) {
@@ -94,13 +94,13 @@ begin
     pal_ptr := @vga_palette; {make local variables point to global}
     rgb_ptr := @rgb;
     if boolstate then asm
-        mov ax, 13h          {set 320x240x256 graphics mode}
-        int 10h
+        mov  ax, 13h         {set 320x240x256 graphics mode}
+        int  10h
         push es              {ES will be overwritten by LES}
         cld                  {clear DF, auto-advance arrays on write}
         les  di, pal_ptr     {point [ES:DI] to `vga_palette`}
         mov  bx, 0           {start with first color}
-        @iterate_copyaway:   {fill `vga_palette` with VGA palette}
+        @loop_copyaway:      {fill `vga_palette` with VGA palette}
             mov   ax, 1015h  {get RGB of color #BL (#BX)}
             int   10h
             mov   al, dh     {DH = red}
@@ -111,22 +111,22 @@ begin
             stosb            {copy AL into next pos of `vga_palette`}
             add   bx, 1      {proceed to next color}
             cmp   bx, 256    {until all colors 0..255 processed}
-            jl @iterate_copyaway
-        les di, rgb_ptr      {point [ES:DI] to `rgb`}
-        mov al, 16           {start with first extended color}
-        @fillerloop:
+            jl    @loop_copyaway
+        les   di, rgb_ptr    {point [ES:DI] to `rgb`}
+        mov   al, 16         {start with first extended color}
+        @loop_fillrgb:
             stosb            {put color number into next flat pos of `rgb`}
-            add al, 1        {proceed to next color}
-            cmp al, 232      {until all extended colors processed}
-            jb @fillerloop
-        pop es
+            add   al, 1      {proceed to next color}
+            cmp   al, 232    {until all extended colors processed}
+            jb    @loop_fillrgb
+        pop   es
     end
     else asm
         push ds              {DS will be overwritten by LDS}
         cld                  {clear DF, auto-advance arrays on read}
         lds  si, pal_ptr     {point [DS:SI] to `vga_palette`}
         mov  bx, 0           {start with first color}
-        @iterate_copyback:   {fill VGA palette with stored `vga_palette`}
+        @loop_copyback:      {fill VGA palette with stored `vga_palette`}
             lodsb            {load next byte from `palette` into AL}
             mov   dh, al     {DH = red}
             lodsb            {load next byte from `palette` into AL}
@@ -137,10 +137,10 @@ begin
             int   10h
             add   bx, 1      {proceed to next color}
             cmp   bx, 256    {until all colors 0..255 processed}
-            jl @iterate_copyback
+            jl    @loop_copyback
         pop  ds              {restore DS}
-        mov ax, 3            {set 80x25x16 text mode}
-        int 10h
+        mov  ax, 3           {set 80x25x16 text mode}
+        int  10h
     end;
     if boolstate then
         resetcolors;
