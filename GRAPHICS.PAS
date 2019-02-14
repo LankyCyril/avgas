@@ -6,7 +6,7 @@ UNIT GRAPHICS {
     colors from 16 to 231 are all possible combinations of these steps;
     colors from 0 to 15 are preserved (16 basic colors);
     colors from 232 to 255 are wildcards.
-    Currently compiles under 16-bit Turbo Pascal to just 1232 bytes!
+    Currently compiles under 16-bit Turbo Pascal to just 1264 bytes!
 };
 
 INTERFACE
@@ -19,7 +19,7 @@ var rgb: array[0..5, 0..5, 0..5] of byte {
     avoids function call overheads (if it were function(r, g, b)) or
     having to compute values inline each time
 };
-procedure graphmode(boolstate: boolean) {
+procedure graphmode(const boolstate: boolean) {
     switches between text and graphics modes
 };
 function putpixel(x, y: word; color: byte): boolean {
@@ -83,23 +83,24 @@ asm
         jl @loop_resetcolors
 end;
 
-procedure graphmode(boolstate: boolean) {
-    Switches between text and graphics modes.
-    * with `boolstate=true` enters 320x200x216 graphics mode;
-      with `boolstate=false` returns to text mode and
-          restores default VGA palette.
+procedure graphmode(const boolstate: boolean); assembler {
+    Switches between text and graphics modes;
+    * graphmode(true) enters 320x200x216 graphics mode;
+    * graphmode(false) returns to text mode and restores default VGA palette.
 };
-var pal_ptr, rgb_ptr: ^byte;
-begin
-    pal_ptr := @vga_palette; {make local variables point to global}
-    rgb_ptr := @rgb;
-    if boolstate then asm
-        mov  ax, 13h         {set 320x240x256 graphics mode}
+const {make local variables point to global ones}
+      pal_ptr: ^byte = @vga_palette;
+      rgb_ptr: ^byte = @rgb;
+asm
+    cld                      {clear DF, auto-advance arrays on write}
+    mov bx, 0                {start with first color}
+    cmp boolstate, 0
+    je  @set_textmode
+    @set_graphmode:
+        mov  ax, 13h         {set 320x200x256 graphics mode}
         int  10h
         push es              {ES will be overwritten by LES}
-        cld                  {clear DF, auto-advance arrays on write}
         les  di, pal_ptr     {point [ES:DI] to `vga_palette`}
-        mov  bx, 0           {start with first color}
         @loop_copyaway:      {fill `vga_palette` with VGA palette}
             mov   ax, 1015h  {get RGB of color #BL (#BX)}
             int   10h
@@ -120,12 +121,11 @@ begin
             cmp   al, 232    {until all extended colors processed}
             jb    @loop_fillrgb
         pop   es
-    end
-    else asm
+        call  resetcolors
+        jmp   @finish_graphmode
+    @set_textmode:
         push ds              {DS will be overwritten by LDS}
-        cld                  {clear DF, auto-advance arrays on read}
         lds  si, pal_ptr     {point [DS:SI] to `vga_palette`}
-        mov  bx, 0           {start with first color}
         @loop_copyback:      {fill VGA palette with stored `vga_palette`}
             lodsb            {load next byte from `palette` into AL}
             mov   dh, al     {DH = red}
@@ -141,9 +141,7 @@ begin
         pop  ds              {restore DS}
         mov  ax, 3           {set 80x25x16 text mode}
         int  10h
-    end;
-    if boolstate then
-        resetcolors;
+    @finish_graphmode:
 end;
 
 function putpixel(x, y: word; color: byte): boolean {
