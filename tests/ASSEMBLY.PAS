@@ -83,11 +83,11 @@ asm
     stosb; {store AL at [es:di]; stosw would store AX}
     mov ah, 0
     xchg ax, cx; {exchange values}
-    jcxz @3; {jump short if CX=0, so my guess is if it's the \0 terminator}
+    jcxz @3; {jump short if CX=0, length of string is 0}
   @1:
     lodsb
     cmp al, 'a'
-    jb  @2; {jump if below; unsigned version of jl}
+    jb @2; {jump if below; unsigned version of jl}
     cmp al, 'z'
     ja @2; {jump if above; unsigned version of jg}
     sub al, 20h
@@ -98,8 +98,28 @@ asm
     pop ds
 end;
 
+procedure iter_string(str: string); assembler;
+asm
+    push ds
+    cld
+    lds si, str; {make [ds:si] point to `str`}
+    lodsb; {load char at [ds:si] into al; 0th char is string length}
+    cmp al, 0
+    je @terminate
+    mov cl, al; {move length of string into loop counter register}
+  @iterate:
+    lodsb; {load next char (actual char)}
+    mov dl, al
+    mov al, 0
+    mov ah, 2
+    int 21h
+    loop @iterate
+  @terminate:
+    pop ds
+end;
+
 begin
     clrscr;
-    writeln(ass_uppercase('Hello world'));
+    iter_string('this works!');
     readln;
 end.
