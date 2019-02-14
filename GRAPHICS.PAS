@@ -43,45 +43,44 @@ procedure resetcolors; assembler {
     Sets the VGA palette to an RGB array with 6 steps of each color
 };
 asm
-    mov bx, 16; {start with color 16}
-    @@paletteloop:
-        mov ax, bx; {dividend}
+    mov bx, 16        {start with color 16}
+    @paletteloop:
+        mov ax, bx    {dividend}
         sub ax, 16
-        mov dl, 6; {divisor}
+        mov dl, 6     {divisor}
         div dl
-        mov cl, ah; {move remainder to blue register}
-        mov ah, 0; {make sure ax = al, our quotient}
+        mov cl, ah    {move remainder to blue register}
+        mov ah, 0     {make sure AX = AL, our quotient}
         div dl
-        mov ch, ah; {move remainder to green register}
-        mov dh, al; {move quotient to red register}
-        ; {now exponentiate red}
-        mov dl, cl; {cl is used for SHL, but we'll need it later}
+        mov ch, ah    {move remainder to green register}
+        mov dh, al    {move quotient to red register}
+        {now exponentiate red}
+        mov dl, cl    {CL is used for SHL, but we'll need it later}
         mov cl, dh
         add cl, 1
         mov dh, 1
         shl dh, cl
-        sub dh, 2
-        mov cl, dl; {restore rescued value of cl}
-        ; {now exponentiate green}
-        mov dl, cl; {cl is used for SHL, but we'll need it later}
+        sub dh, 2     {DH = 1 SHL (DH + 1) - 2}
+        mov cl, dl    {restore rescued value of CL}
+        {now exponentiate green}
+        mov dl, cl    {CL is used for SHL, but we'll need it later}
         mov cl, ch
         add cl, 1
         mov ch, 1
         shl ch, cl
-        sub ch, 2
-        mov cl, dl; {restore rescued value of cl}
-        ; {now exponentiate blue:}
+        sub ch, 2     {CH = 1 SHL (CH + 1) - 2}
+        mov cl, dl    {restore rescued value of CL}
+        {now exponentiate blue}
         add cl, 1
-        mov dl, 1; {cl is used for SHL, so we calculate in an unused register}
+        mov dl, 1     {CL is used for SHL, so we calculate in unused DL}
         shl dl, cl
         sub dl, 2
-        mov cl, dl; {put blue where it belongs}
-        ; {set RGB color of #bx}
-        mov ax, 1010h
+        mov cl, dl    {CL = 1 SHL (CL + 1) - 2}
+        mov ax, 1010h {set RGB color of #BL (#BX)}
         int 10h
-        add bx, 1; {proceed to next color}
-    cmp bx, 232; {until all 216 colors filled}
-    jl @@paletteloop
+        add bx, 1     {proceed to next color}
+        cmp bx, 232   {until all 216 colors filled}
+        jl @paletteloop
 end;
 
 procedure graphmode(boolstate: boolean) {
@@ -100,22 +99,22 @@ begin
         asm
             mov ax, 13h          {set 320x240x256 graphics mode}
             int 10h
-            push es
+            push es              {ES will be overwritten by LES}
             cld                  {clear DF, auto-advance arrays on write}
-            les  di, pal_ptr     {point [es:di] to `vga_palette`}
+            les  di, pal_ptr     {point [ES:DI] to `vga_palette`}
             mov  bx, 0           {start with first color}
             @iterate_copyaway:   {fill VGA palette with stored `vga_palette`}
-                mov   ax, 1015h  {get RGB of color #bl (#bx)}
+                mov   ax, 1015h  {get RGB of color #BL (#BX)}
                 int   10h
-                mov   al, dh     {dh = read}
+                mov   al, dh     {DH = red}
                 stosb            {copy AL into next pos of `vga_palette`}
-                mov   al, ch     {ch = green}
+                mov   al, ch     {CH = green}
                 stosb            {copy AL into next pos of `vga_palette`}
-                mov   al, cl     {cl = blue}
+                mov   al, cl     {CL = blue}
                 stosb            {copy AL into next pos of `vga_palette`}
                 add   bx, 1      {proceed to next color}
-                cmp   bx, 256
-            jl @iterate_copyaway
+                cmp   bx, 256    {until all colors 0..255 processed}
+                jl @iterate_copyaway
             pop es               {restore ES}
         end;
         pflatarray := @rgb; {fill `rgb` as if it was a one-dimensional array}
@@ -126,20 +125,20 @@ begin
     else asm
         push ds              {DS will be overwritten by LDS}
         cld                  {clear DF, auto-advance arrays on read}
-        lds  si, pal_ptr     {point [ds:si] to `vga_palette`}
+        lds  si, pal_ptr     {point [DS:SI] to `vga_palette`}
         mov  bx, 0           {start with first color}
         @iterate_copyback:   {fill VGA palette with stored `vga_palette`}
             lodsb            {load next byte from `palette` into AL}
-            mov   dh, al     {dh = red}
+            mov   dh, al     {DH = red}
             lodsb            {load next byte from `palette` into AL}
-            mov   ch, al     {ch = green}
+            mov   ch, al     {CH = green}
             lodsb            {load next byte from `palette` into AL}
-            mov   cl, al     {cl = blue}
-            mov   ax, 1010h  {set RGB of color #bl (#bx)}
+            mov   cl, al     {CL = blue}
+            mov   ax, 1010h  {set RGB of color #BL (#BX)}
             int   10h
             add   bx, 1      {proceed to next color}
-            cmp   bx, 256
-        jl @iterate_copyback
+            cmp   bx, 256    {until all colors 0..255 processed}
+            jl @iterate_copyback
         pop  ds              {restore DS}
         mov ax, 3            {set 80x25x16 text mode}
         int 10h
