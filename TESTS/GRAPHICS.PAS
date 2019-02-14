@@ -1,4 +1,4 @@
-uses crt, graphics;
+uses crt, graphics, graphext;
 
 procedure draw_blocks {
     Tests block drawing:
@@ -37,7 +37,7 @@ var i, j, offset: longint;
     color: byte;
     x, y, xi, yi: word;
 begin
-    graphmode(true, false);
+    graphmode(true);
     fillchar(mem[$A000:0], 64000, 0);
     for i := 1 to maxi do begin
         for j := 1 to maxj do begin
@@ -84,7 +84,7 @@ begin
         end;
         if keypressed then break
     end;
-    graphmode(false, false);
+    graphmode(false);
     write('Press <ENTER> to finish block drawing test');
     readln;
 end;
@@ -142,7 +142,23 @@ begin
     readln;
 end;
 
+procedure get_stored_palette;
+var i: word;
+    color: byte;
 begin
-    draw_blocks;
-    rgb_arithmetic;
+    for i := 0 to 768 do
+        if i mod 2 = 1 then begin
+            color := vga_palette[i];
+            if color < 10 then
+                write('0');
+            write(color, ', ');
+        end;
+end;
+
+begin
+    clrscr;
+    graphmode(true);
+    graphmode(false);
+    get_stored_palette;
+    readln;
 end.

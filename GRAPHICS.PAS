@@ -36,9 +36,9 @@ procedure resetcolors {
     restores full saturation 216 color palette
 };
 
-IMPLEMENTATION
-
 var vga_palette: array[0..767] of byte;
+
+IMPLEMENTATION
 
 procedure resetcolors; assembler {
     Sets the VGA palette to an RGB array with 6 steps of each color

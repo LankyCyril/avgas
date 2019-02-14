@@ -13,11 +13,11 @@ procedure graphmode(boolstate: boolean) {
     from unit GRAPHICS
 };
 
+var vga_palette: array[0..767] of byte;
+
 IMPLEMENTATION
 
 uses graphics;
-
-var vga_palette: array[0..767] of byte;
 
 const MOVE_AWAY = $1017;
       MOVE_BACK = $1012;
