@@ -19,7 +19,16 @@ begin
     resetcolors;
     write('Restore the 216 colors');
     readln;
-    setpalette(OUTRUN);
+    setpalette(palette.leveled);
+    write('Change palette');
+    readln;
+    setpalette(palette.aggressive);
+    write('Change palette');
+    readln;
+    setpalette(palette.vaporwave);
+    write('Change palette');
+    readln;
+    setpalette(palette.outrun);
     write('Change palette');
     readln;
     fillscreen(rgb[2,0,2]);
