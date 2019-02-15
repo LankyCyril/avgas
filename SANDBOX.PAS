@@ -13,23 +13,23 @@ begin
     readln;
     for i := 1 to 4 do begin
         write('Fade the 216 colors ', i, ' times');
-        fade(0);
+        fadepalette(0);
         readln;
     end;
     resetcolors;
     write('Restore the 216 colors');
     readln;
     setpalette(palette.leveled);
-    write('Change palette');
+    write('Leveled palette');
     readln;
     setpalette(palette.aggressive);
-    write('Change palette');
+    write('Aggressive palette');
     readln;
     setpalette(palette.vaporwave);
-    write('Change palette');
+    write('Vaporwave palette');
     readln;
     setpalette(palette.outrun);
-    write('Change palette');
+    write('Outrun palette');
     readln;
     fillscreen(rgb[2,0,2]);
     write('Fill screen with extended purple');

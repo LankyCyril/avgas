@@ -7,8 +7,8 @@ type Palette216 = array[0..647] of byte;
 procedure showpalette {
     displays the current 216 color palette in a grid
 };
-procedure fade(smoothing: byte) {
-    darkens and washes out VGA palette
+procedure fadepalette(smoothing: byte) {
+    darkens and washes out current palette
 };
 procedure setpalette(const palette: Palette216) {
     sets the 216 palette to values stored in `palette`
@@ -240,8 +240,8 @@ begin
     end;
 end;
 
-procedure fade(smoothing: byte); assembler {
-    Darkens and washes out VGA palette
+procedure fadepalette(smoothing: byte); assembler {
+    Darkens and washes out current palette
 };
 asm
     mov bx, 231; {color number}
