@@ -7,8 +7,8 @@ type Palette216 = array[0..647] of byte;
 procedure showpalette {
     displays the current 216 color palette in a grid
 };
-procedure fadepalette(smoothing: byte) {
-    darkens and washes out current palette
+procedure fadepalette(const smoothing: byte) {
+    darkens / washes out current palette
 };
 procedure setpalette(const palette: Palette216) {
     sets the 216 palette to values stored in `palette`
@@ -240,25 +240,24 @@ begin
     end;
 end;
 
-procedure fadepalette(smoothing: byte); assembler {
-    Darkens and washes out current palette
+procedure fadepalette(const smoothing: byte); assembler {
+    Darkens / washes out current palette
 };
 asm
-    mov bx, 231; {color number}
-    @@fadeloop:
-        mov ax, 1015h; {get RGB of color #bl (#bx)}
+    mov bl, 16              {start with first extended color}
+    @loop_fade:
+        mov ax, 1015h       {get RGB of color #BL}
         int 10h
-        add dh, [smoothing]; {red}
-        add ch, [smoothing]; {green}
-        add cl, [smoothing]; {blue}
+        add dh, [smoothing] {red}
+        add ch, [smoothing] {green}
+        add cl, [smoothing] {blue}
         shr dh, 1
         shr cx, 1
-        mov ax, 1010h; {set RGB of color #bl (#bx)}
+        mov ax, 1010h       {set RGB of color #BL}
         int 10h
-        sub bx, 1; {previous color}
-        mov cl, bl; {synchronize loop counter with color number}
-        sub cl, 16; {except make sure we stop before base 16 colors}
-    jnz @@fadeloop
+        add bl, 1           {proceed to next color}
+        cmp bl, 232         {until all extended colors processed}
+        jb  @loop_fade
 end;
 
 procedure setpalette(const palette: Palette216); assembler;
