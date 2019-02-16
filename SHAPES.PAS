@@ -39,7 +39,7 @@ IMPLEMENTATION
 uses graphics;
 
 type ScreenMask = array[0..63999] of byte;
-var screen_mask: ^ScreenMask;
+var screen_mask: ^ScreenMask; {this is big, have to store in extended mem}
 
 procedure resetmask {
     Resets mask; must be called, otherwise mask is garbage
@@ -119,7 +119,7 @@ asm
         jnz  @loop_maskblock_y
 
     pop es
-    mov al,  1               {return true}
+    mov al, 1                {return true}
     jmp @finish_maskblock
 
     @fail_maskblock:
@@ -211,6 +211,8 @@ asm
         mov es, ax {point [ES:DI] to 1b before line's 1st pixel on screen}
 
         mov al, 1
+        mov bl, color
+
         @loop_hline:
             inc di
             inc si
@@ -219,8 +221,7 @@ asm
             mov ah, [ds:si]
             cmp ah, 0
                 je @loop_hline
-            mov ah, color
-            mov [es:di], ah
+            mov [es:di], bl
             jmp @loop_hline
 
     @fail_hline:
