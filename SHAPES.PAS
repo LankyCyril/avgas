@@ -118,8 +118,8 @@ asm
         sub  bx, 1           {until height of current block}
         jnz  @loop_maskblock_y
 
-    pop  es
-    mov  al, 1               {return true}
+    pop es
+    mov al,  1               {return true}
     jmp @finish_maskblock
 
     @fail_maskblock:
@@ -170,7 +170,7 @@ end;
 
 function hline(x1, x2, y: word; color: byte): boolean; assembler {
     Draws a horizontal line from point (x1, y) to point (x2, y) with `color`;
-    returns false if x1 > x2 or if completely out of bounds, true otherwise.
+    returns false if completely out of bounds, true otherwise.
 };
 asm
     push ds
@@ -204,13 +204,13 @@ asm
         add cx, di  {CX = offset of line's last pixel}
         sub di, 1   {move back one step, for easier checks in @loop_hline}
 
-        lds  si, screen_mask
-        add  si, di {point [DS:SI] to 1b before line's 1st pixel in mask}
+        lds si, screen_mask
+        add si, di {point [DS:SI] to 1b before line's 1st pixel in mask}
 
-        mov  ax, 0A000h
-        mov  es, ax {point [ES:DI] to 1b before line's 1st pixel on screen}
+        mov ax, 0A000h
+        mov es, ax {point [ES:DI] to 1b before line's 1st pixel on screen}
 
-        mov  al, 1
+        mov al, 1
         @loop_hline:
             inc di
             inc si
