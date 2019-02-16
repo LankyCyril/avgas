@@ -45,13 +45,13 @@ procedure resetmask {
 };
 begin
     new(screen_mask); {make pointer available for inside assembly}
-    asm
+    asm {fillchar(screen_mask^, 64000, 0), but 16 bytes leaner}
         push es
         cld
         les  di, screen_mask
         mov  cx, 32000
-        @loop_resetmask: {basically fillchar, but 16 bytes leaner}
-            mov   ax, 0FFFFh
+        mov  ax, 0FFFFh
+        @loop_resetmask:
             stosw
             sub   cx, 1
             jnz   @loop_resetmask

@@ -6,7 +6,7 @@ UNIT GRAPHICS {
     colors from 16 to 231 are all possible combinations of these steps;
     colors from 0 to 15 are preserved (16 basic colors);
     colors from 232 to 255 are wildcards.
-    Currently compiles under 16-bit Turbo Pascal to just 1264 bytes!
+    Currently compiles under 16-bit Turbo Pascal to just 1232 bytes!
 };
 
 INTERFACE
@@ -175,11 +175,24 @@ begin
         getpixel := false;
 end;
 
-procedure fillscreen(color: byte) {
+procedure fillscreen(color: byte); assembler {
     Fills screen with `color`; fillscreen(0) can be used to clear screen
 };
-begin
-    fillchar(mem[$A000:0], 64000, color);
+asm {fillchar(mem[$A000:0], 64000, color), but 32 bytes leaner}
+    push es
+    cld
+    mov  ax, 0A000h
+    mov  es, ax
+    mov  di, 0
+    mov  cx, 32000  {instead of writing 64000 bytes, write 32000 words}
+    mov  al, color  {AX = AH:color}
+    shl  ax, 8      {AX = color:0}
+    add  al, color  {AX = color:color}
+    @loop_fillscreen:
+        stosw
+        sub   cx, 1
+        jnz   @loop_fillscreen
+    pop  es
 end;
 
 end.
