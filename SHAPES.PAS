@@ -2,6 +2,12 @@ UNIT SHAPES;
 
 INTERFACE
 
+procedure resetmask {
+    resets mask; must be called, otherwise mask is garbage
+};
+function maskblock(x1, y1, x2, y2: word; state: boolean): boolean {
+    adds a rectangular area to mask
+};
 function hline(x1, x2, y: word; color: byte): boolean {
     draws a horizontal line from point (x1, y) to point (x2, y) with `color`
 };
@@ -10,12 +16,6 @@ function vline(x, y1, y2: word; color: byte): boolean {
 };
 function block(x1, y1, x2, y2: word; color: byte): boolean {
     draws a filled rectangle of `color` from point (x1, y1) to point (x2, y2)
-};
-procedure resetmask {
-    resets mask
-};
-function maskblock(x1, y1, x2, y2: word; state: boolean): boolean {
-    adds a rectangular area to mask
 };
 
 type ScreenMask = array[0..63999] of byte;
@@ -81,7 +81,9 @@ begin
         hline(x1, x2, y, color);
 end;
 
-procedure resetmask;
+procedure resetmask {
+    Resets mask; must be called, otherwise mask is garbage
+};
 begin
     new(screen_mask); {make pointer available for inside assembly}
     asm
@@ -99,73 +101,80 @@ begin
 end;
 
 function maskblock(x1, y1, x2, y2: word; state: boolean): boolean; assembler {
-    Adds a rectangular area to mask
+    Adds a rectangular area to mask;
+    returns false if area fully out of bounds or has negative dimensions;
+    returns true otherwise.
 };
 asm
-    mov  ax, x1
-    cmp  ax, getmaxx         {if x1 > getmaxx, mask is null}
-        ja @nomask
-    mov  bx, x2
-    cmp  bx, getmaxx         {if x2 > getmaxx, need to cap it}
-        ja @set_bx_to_getmaxx
-        @bx_is_getmaxx:
-    cmp  ax, bx              {if x1 > x2, mask is null}
-        ja @nomask
+    mov  al, 0               {assume return false unless proven successful}
 
-    mov  cx, y1
-    cmp  cx, getmaxy         {if y1 > getmaxy, mask is null}
-        ja @nomask
-    mov  dx, y2
-    cmp  dx, getmaxy         {if y2 > getmaxy, need to cap it}
-        ja @set_dx_to_getmaxy
-        @dx_is_getmaxy:
-    cmp  cx, dx              {if y1 > y2, mask is null}
-        ja @nomask
+    mov  cx, x1
+    cmp  cx, getmaxx         {if x1 > getmaxx, mask is null}
+        ja @fail_maskblock
+    mov  dx, x2
+    cmp  dx, getmaxx         {if x2 > getmaxx, need to cap it}
+        ja @set_dx_to_getmaxx
+        @dx_is_getmaxx:
+    cmp  cx, dx              {if x1 > x2, mask is null}
+        ja @fail_maskblock
 
-    sub  bx, ax              {AX = mask x1, BX = mask width}
-    sub  dx, cx              {CX = mask y1, DX = mask height}
+    mov  ax, y1
+    cmp  ax, getmaxy         {if y1 > getmaxy, mask is null}
+        ja @fail_maskblock
+    mov  bx, y2
+    cmp  bx, getmaxy         {if y2 > getmaxy, need to cap it}
+        ja @set_bx_to_getmaxy
+        @bx_is_getmaxy:
+    cmp  ax, bx              {if y1 > y2, mask is null}
+        ja @fail_maskblock
+
+    sub  dx, cx              {CX = mask x1, DX = mask width}
+    add  dx, 1               {width is inclusive!}
+    sub  bx, ax              {AX = mask y1, BX = mask height}
+    add  bx, 1               {height is inclusive!}
 
     push es
     les  di, screen_mask     {point [ES:DI] to screen_mask^[0]}
-    push cx
-    shl  cx, 8
-    add  di, cx              {point [ES:DI] to screen_mask^[y1 * 240]}
-    pop  cx
-    shl  cx, 6
-    add  di, cx              {point [ES:DI] to screen_mask^[y1 * 320]}
-    add  di, ax              {point [ES:DI] to screen_mask^[y1 * 320 + x1]}
+    push ax
+    shl  ax, 8
+    add  di, ax              {point [ES:DI] to screen_mask^[y1 * 240]}
+    pop  ax
+    shl  ax, 6
+    add  di, ax              {point [ES:DI] to screen_mask^[y1 * 320]}
+    add  di, cx              {point [ES:DI] to screen_mask^[y1 * 320 + x1]}
 
     mov  ah, 255
     add  ah, state
     @loop_maskblock_y:
-        push bx
+        push dx
         @loop_maskblock_x:
             mov  [es:di], ah
             add  di, 1       {move pointer right along mask}
-            sub  bx, 1       {until width of current horizontal line}
+            sub  dx, 1       {until width of current horizontal line}
             jnz  @loop_maskblock_x
-        pop  bx              {rescure width for next line}
+        pop  dx              {rescue width for next line}
+        sub  di, dx          {move pointer left along mask (carriage return)}
         add  di, 320         {move pointer down along mask}
-        sub  dx, 1           {until height of current block}
+        sub  bx, 1           {until height of current block}
         jnz  @loop_maskblock_y
 
     pop  es
-    mov  al, 255             {return true}
-    jmp @finish_maskblock
+    mov  al, 255             {return true; AL cannot be 255 otherwise,}
+    jmp @finish_maskblock    {because 255 > getmaxy and would've been capped}
 
-    @set_bx_to_getmaxx:
+    @set_dx_to_getmaxx:
         cmp  al, 255         {if function already successful}
-            jmp @finish_maskblock
-        mov  bx, getmaxx
-        jmp  @bx_is_getmaxx
+            je @finish_maskblock
+        mov  dx, getmaxx
+        jmp  @dx_is_getmaxx
 
-    @set_dx_to_getmaxy:
+    @set_bx_to_getmaxy:
         cmp  al, 255         {if function already successful}
-            jmp @finish_maskblock
-        mov  dx, getmaxy
-        jmp  @dx_is_getmaxy
+            je @finish_maskblock
+        mov  bx, getmaxy
+        jmp  @bx_is_getmaxy
 
-    @nomask:
+    @fail_maskblock:
         mov al, 0            {return false}
     @finish_maskblock:
 end;
