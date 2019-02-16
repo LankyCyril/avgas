@@ -14,7 +14,7 @@ function block(x1, y1, x2, y2: word; color: byte): boolean {
 procedure resetmask {
     resets mask
 };
-procedure maskblock(x1, y1, x2, y2: word) {
+procedure maskblock(x1, y1, x2, y2: word; state: boolean) {
     adds a rectangular area to mask
 };
 
@@ -83,7 +83,7 @@ end;
 
 procedure resetmask;
 begin
-    new(screen_mask);
+    new(screen_mask); {make pointer available for inside assembly}
     asm
         push es
         cld
@@ -98,7 +98,7 @@ begin
     end;
 end;
 
-procedure maskblock(x1, y1, x2, y2: word); assembler {
+procedure maskblock(x1, y1, x2, y2: word; state: boolean); assembler {
     Adds a rectangular area to mask
 };
 asm
@@ -129,11 +129,12 @@ asm
     add  di, cx              {point [ES:DI] to screen_mask^[y1 * 320]}
     add  di, ax              {point [ES:DI] to screen_mask^[y1 * 320 + x1]}
 
+    mov  ah, 255
+    add  ah, state
     @loop_maskblock_y:
         push bx
         @loop_maskblock_x:
-            mov  ax, 0
-            mov  [es:di], ax
+            mov  [es:di], ah
             add  di, 1       {move pointer right along mask}
             sub  bx, 1       {until width of current horizontal line}
             jnz  @loop_maskblock_x
