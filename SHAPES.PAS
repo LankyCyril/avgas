@@ -1,5 +1,16 @@
 {$A-,B-,D-,E-,F-,G+,I-,L-,N-,O-,P-,Q-,R-,S-,T-,V-,X+,Y-}
-UNIT SHAPES;
+UNIT SHAPES {
+    Defines functions that draw shapes (lines, rectangles, etc).
+    Introduces a mask, which must be set to 255 first (`resetmask`):
+      * every drawing function in this unit will only modify
+        pixels where mask is 255;
+      * where mask is 0, the screen remains intact.
+    Function `maskblock()` can be used to modify parts of the mask:
+      * maskblock([coords], true) masks the block with [coords];
+      * maskblock([coords], false) frees up the block.
+    Calling `resetmask` again clears mask and allows all pixels to be
+    written to.
+};
 
 INTERFACE
 
@@ -10,7 +21,7 @@ function maskblock(x1, y1, x2, y2: word; state: boolean): boolean {
     adds a rectangular area to mask
 };
 function mputpixel(x, y: word; color: byte): boolean {
-    sets color of pixel at `x` and `y` to `color`
+    sets color of pixel at `x` and `y` to `color`, dodging mask; SLOW!
 };
 function hline(x1, x2, y: word; color: byte): boolean {
     draws a horizontal line from point (x1, y) to point (x2, y) with `color`
@@ -39,7 +50,7 @@ begin
         cld
         les  di, screen_mask
         mov  cx, 32000
-        @loop_resetmask:
+        @loop_resetmask: {basically fillchar, but 16 bytes leaner}
             mov   ax, 0FFFFh
             stosw
             sub   cx, 1
@@ -102,7 +113,7 @@ asm
             jnz  @loop_maskblock_x
         pop  dx              {rescue width for next line}
         sub  di, dx          {move pointer left along mask (carriage return)}
-        add  di, 320         {move pointer down along mask}
+        add  di, 320         {move pointer down along mask (new line)}
         sub  bx, 1           {until height of current block}
         jnz  @loop_maskblock_y
 
@@ -111,13 +122,13 @@ asm
     jmp @finish_maskblock    {because 255 > getmaxy and would've been capped}
 
     @set_dx_to_getmaxx:
-        cmp  al, 255         {if function already successful}
+        cmp  al, 255         {if function already successful, return}
             je @finish_maskblock
         mov  dx, getmaxx
         jmp  @dx_is_getmaxx
 
     @set_bx_to_getmaxy:
-        cmp  al, 255         {if function already successful}
+        cmp  al, 255         {if function already successful, return}
             je @finish_maskblock
         mov  bx, getmaxy
         jmp  @bx_is_getmaxy
@@ -128,7 +139,7 @@ asm
 end;
 
 function mputpixel(x, y: word; color: byte): boolean {
-    Sets color of pixel at `x` and `y` to `color`;
+    Sets color of pixel at `x` and `y` to `color`, dodging mask; SLOW!;
     returns boolean value of success
 };
 begin
@@ -144,9 +155,7 @@ end;
 
 function hline(x1, x2, y: word; color: byte): boolean {
     Draws a horizontal line from point (x1, y) to point (x2, y) with `color`;
-    truncates line appropriately if outside of screen bounds;
-    if x1 > x2, or if line completely out of bounds, returns false;
-    otherwise returns true.
+    returns false if x1 > x2 or if completely out of bounds, true otherwise.
 };
 var length: word;
 begin
@@ -166,7 +175,7 @@ end;
 
 function vline(x, y1, y2: word; color: byte): boolean {
     Draws a vertical line from point (x, y1) to point (x, y2) with `color`;
-    returns false y1 > y2 or if completely out of bounds, true otherwise.
+    returns false if y1 > y2 or if completely out of bounds, true otherwise.
 };
 var length, yd, startmem: word;
 begin

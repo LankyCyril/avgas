@@ -150,7 +150,7 @@ asm
 end;
 
 function putpixel(x, y: word; color: byte): boolean {
-    Sets color of pixel at `x` and `y` using given R, G, B values;
+    Sets color of pixel at `x` and `y` to `color`;
     returns boolean value of success
 };
 begin
