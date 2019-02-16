@@ -15,7 +15,7 @@ asm
     mov  cl, 8
     @aloop:
         lodsb
-        and  al,[di]
+        and  al, [es:di]
         stosb
         sub cl, 1
         jnz @aloop
