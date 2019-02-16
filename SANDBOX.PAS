@@ -11,6 +11,7 @@ begin
     block(33, 15, 285, 183, 0);
     showpalette;
     maskblock(32, 14, 286, 184, true);
+    hline(0, 400, 100, 1);
     write('Showcase default palette');
     readln;
     for x := 1 to 4 do begin

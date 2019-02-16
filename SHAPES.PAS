@@ -179,24 +179,64 @@ asm
     @finish_mputpixel:
 end;
 
-function hline(x1, x2, y: word; color: byte): boolean {
+function hline(x1, x2, y: word; color: byte): boolean; assembler {
     Draws a horizontal line from point (x1, y) to point (x2, y) with `color`;
     returns false if x1 > x2 or if completely out of bounds, true otherwise.
 };
-var length: word;
-begin
-    hline := true;
-    if (x1 > x2) or (x1 > getmaxx) or (y > getmaxy) then
-        hline := false
-    else if x1 <= getmaxx then begin
-        if x2 > getmaxx then
-            length := getmaxx - x1 + 1
-        else
-            length := x2 - x1 + 1;
-        fillchar(mem[$A000: y shl 8 + y shl 6 + x1], length, color);
-    end
-    else
-        mem[$A000: y shl 8 + y shl 6 + x1] := color;
+asm
+    mov dx, y
+    cmp dx, getmaxy
+        ja @fail_hline
+    mov bx, x1
+    cmp bx, getmaxx
+        ja @fail_hline
+    mov cx, x2
+    cmp cx, getmaxx
+        jna @valid_hline
+    mov cx, getmaxx
+
+    @valid_hline:
+        cmp bx, cx
+            jna @forward_hline
+        xchg bx, cx
+
+    @forward_hline:
+        sub cx, bx  {BX = x1, CX = width, DX = y}
+        add cx, 1   {width is inclusive!}
+        shl dx, 6
+        mov di, dx
+        shl di, 2
+        add di, dx
+        add di, bx  {point DI to offset of line's first pixel}
+        add cx, di  {CX = offset of line's last pixel}
+        sub di, 1   {move back one step, for easier checks in @loop_hline}
+
+        push ds
+        lds  si, screen_mask
+        add  si, di {point [DS:SI] to 1b before line's 1st pixel in mask}
+
+        push es
+        mov  ax, 0A000h
+        mov  es, ax {point [ES:DI] to 1b before line's 1st pixel on screen}
+
+        mov  al, 1
+        @loop_hline:
+            inc di
+            inc si
+            cmp cx, si
+                je @finish_hline
+            mov ah, [ds:si]
+            cmp ah, 0
+                je @loop_hline
+            mov ah, color
+            mov [es:di], ah
+            jmp @loop_hline
+
+    @fail_hline:
+        mov al, 0
+    @finish_hline:
+        pop es
+        pop ds
 end;
 
 function vline(x, y1, y2: word; color: byte): boolean {
