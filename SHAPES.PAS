@@ -11,6 +11,15 @@ function vline(x, y1, y2: word; color: byte): boolean {
 function block(x1, y1, x2, y2: word; color: byte): boolean {
     draws a filled rectangle of `color` from point (x1, y1) to point (x2, y2)
 };
+procedure resetmask {
+    resets mask
+};
+procedure maskblock(x1, y1, x2, y2: word) {
+    adds a rectangular area to mask
+};
+
+type ScreenMask = array[0..63999] of byte;
+var screen_mask: ^ScreenMask;
 
 IMPLEMENTATION
 
@@ -72,5 +81,69 @@ begin
         hline(x1, x2, y, color);
 end;
 
-end.
+procedure resetmask;
+begin
+    new(screen_mask);
+    asm
+        push es
+        cld
+        les  di, screen_mask
+        mov  cx, 32000
+        @loop_resetmask:
+            mov   ax, 0FFFFh
+            stosw
+            sub   cx, 1
+            jnz   @loop_resetmask
+        pop  es
+    end;
+end;
 
+procedure maskblock(x1, y1, x2, y2: word); assembler {
+    Adds a rectangular area to mask
+};
+asm
+    mov  ax, x1
+    cmp  ax, getmaxx         {if x1 > getmaxx, mask is null}
+        ja @nomask
+    mov  bx, x2
+    cmp  ax, bx              {if x1 > x2, mask is null}
+        ja @nomask
+
+    mov  cx, y1
+    cmp  cx, getmaxy         {if y1 > getmaxy, mask is null}
+        ja @nomask
+    mov  dx, y2
+    cmp  cx, dx              {if y1 > y2, mask is null}
+        ja @nomask
+
+    sub  bx, ax              {AX = mask x1, BX = mask width}
+    sub  dx, cx              {CX = mask y1, DX = mask height}
+
+    push es
+    les  di, screen_mask     {point [ES:DI] to screen_mask^[0]}
+    push cx
+    shl  cx, 8
+    add  di, cx              {point [ES:DI] to screen_mask^[y1 * 240]}
+    pop  cx
+    shl  cx, 6
+    add  di, cx              {point [ES:DI] to screen_mask^[y1 * 320]}
+    add  di, ax              {point [ES:DI] to screen_mask^[y1 * 320 + x1]}
+
+    @loop_maskblock_y:
+        push bx
+        @loop_maskblock_x:
+            mov  ax, 0
+            mov  [es:di], ax
+            add  di, 1       {move pointer right along mask}
+            sub  bx, 1       {until width of current horizontal line}
+            jnz  @loop_maskblock_x
+        pop  bx              {rescure width for next line}
+        add  di, 320         {move pointer down along mask}
+        sub  dx, 1           {until height of current block}
+        jnz  @loop_maskblock_y
+
+    pop  es
+    @nomask:
+end;
+
+end.
