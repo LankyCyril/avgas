@@ -96,11 +96,9 @@ asm
 
     push es
     les  di, screen_mask     {point [ES:DI] to screen_mask^[0]}
-    push ax
-    shl  ax, 8
-    add  di, ax              {point [ES:DI] to screen_mask^[y1 * 240]}
-    pop  ax
     shl  ax, 6
+    add  di, ax              {point [ES:DI] to screen_mask^[y1 * 64]}
+    shl  ax, 2
     add  di, ax              {point [ES:DI] to screen_mask^[y1 * 320]}
     add  di, cx              {point [ES:DI] to screen_mask^[y1 * 320 + x1]}
 
