@@ -10,6 +10,7 @@ UNIT SHAPES {
       * maskblock([coords], false) frees up the block.
     Calling `resetmask` again clears mask and allows all pixels to be
     written to.
+    Currently compiles under 16-bit Turbo Pascal to just 1424 bytes!
 };
 
 INTERFACE
@@ -65,32 +66,33 @@ function maskblock(x1, y1, x2, y2: word; state: boolean): boolean; assembler {
     returns true otherwise.
 };
 asm
-    mov  al, 0               {assume return false unless proven successful}
-
-    mov  cx, x1
-    cmp  cx, getmaxx         {if x1 > getmaxx, mask is null}
-        ja @fail_maskblock
-    mov  dx, x2
-    cmp  dx, getmaxx         {if x2 > getmaxx, need to cap it}
-        ja @set_dx_to_getmaxx
-        @dx_is_getmaxx:
-    cmp  cx, dx              {if x1 > x2, mask is null}
+    mov cx, x1
+    cmp cx, getmaxx          {if x1 > getmaxx, mask is null}
         ja @fail_maskblock
 
-    mov  ax, y1
-    cmp  ax, getmaxy         {if y1 > getmaxy, mask is null}
-        ja @fail_maskblock
-    mov  bx, y2
-    cmp  bx, getmaxy         {if y2 > getmaxy, need to cap it}
-        ja @set_bx_to_getmaxy
-        @bx_is_getmaxy:
-    cmp  ax, bx              {if y1 > y2, mask is null}
+    mov dx, x2
+    cmp dx, getmaxx          {if x2 > getmaxx, need to cap it}
+        jna @valid_x2
+        mov dx, getmaxx
+    @valid_x2:
+    cmp cx, dx               {if x1 > x2, mask is null}
         ja @fail_maskblock
 
-    sub  dx, cx              {CX = mask x1, DX = mask width}
-    add  dx, 1               {width is inclusive!}
-    sub  bx, ax              {AX = mask y1, BX = mask height}
-    add  bx, 1               {height is inclusive!}
+    mov ax, y1
+    cmp ax, getmaxy          {if y1 > getmaxy, mask is null}
+        ja @fail_maskblock
+    mov bx, y2
+    cmp bx, getmaxy          {if y2 > getmaxy, need to cap it}
+        jna @valid_y2
+        mov bx, getmaxy
+    @valid_y2:
+    cmp ax, bx               {if y1 > y2, mask is null}
+        ja @fail_maskblock
+
+    sub dx, cx               {CX = mask x1, DX = mask width}
+    add dx, 1                {width is inclusive!}
+    sub bx, ax               {AX = mask y1, BX = mask height}
+    add bx, 1                {height is inclusive!}
 
     push es
     les  di, screen_mask     {point [ES:DI] to screen_mask^[0]}
@@ -102,8 +104,9 @@ asm
     add  di, ax              {point [ES:DI] to screen_mask^[y1 * 320]}
     add  di, cx              {point [ES:DI] to screen_mask^[y1 * 320 + x1]}
 
-    mov  ah, 255
-    add  ah, state
+    mov ah, 255
+    add ah, state            {AH = 0 if state is true, and vice versa}
+
     @loop_maskblock_y:
         push dx
         @loop_maskblock_x:
@@ -118,20 +121,8 @@ asm
         jnz  @loop_maskblock_y
 
     pop  es
-    mov  al, 255             {return true; AL cannot be 255 otherwise,}
-    jmp @finish_maskblock    {because 255 > getmaxy and would've been capped}
-
-    @set_dx_to_getmaxx:
-        cmp  al, 255         {if function already successful, return}
-            je @finish_maskblock
-        mov  dx, getmaxx
-        jmp  @dx_is_getmaxx
-
-    @set_bx_to_getmaxy:
-        cmp  al, 255         {if function already successful, return}
-            je @finish_maskblock
-        mov  bx, getmaxy
-        jmp  @bx_is_getmaxy
+    mov  al, 1               {return true}
+    jmp @finish_maskblock
 
     @fail_maskblock:
         mov al, 0            {return false}
@@ -184,23 +175,27 @@ function hline(x1, x2, y: word; color: byte): boolean; assembler {
     returns false if x1 > x2 or if completely out of bounds, true otherwise.
 };
 asm
+    push ds
+    push es
+
     mov dx, y
     cmp dx, getmaxy
         ja @fail_hline
-    mov bx, x1
-    cmp bx, getmaxx
-        ja @fail_hline
-    mov cx, x2
-    cmp cx, getmaxx
-        jna @valid_hline
-    mov cx, getmaxx
 
-    @valid_hline:
-        cmp bx, cx
-            jna @forward_hline
-        xchg bx, cx
+    mov  bx, x1
+    mov  cx, x2
+    cmp  bx, cx
+        jna @forward_hline
+    xchg bx, cx
 
     @forward_hline:
+        cmp bx, getmaxx
+            ja @fail_hline
+        cmp cx, getmaxx
+            jna @valid_hline
+        mov cx, getmaxx
+
+    @valid_hline:
         sub cx, bx  {BX = x1, CX = width, DX = y}
         add cx, 1   {width is inclusive!}
         shl dx, 6
@@ -211,11 +206,9 @@ asm
         add cx, di  {CX = offset of line's last pixel}
         sub di, 1   {move back one step, for easier checks in @loop_hline}
 
-        push ds
         lds  si, screen_mask
         add  si, di {point [DS:SI] to 1b before line's 1st pixel in mask}
 
-        push es
         mov  ax, 0A000h
         mov  es, ax {point [ES:DI] to 1b before line's 1st pixel on screen}
 
