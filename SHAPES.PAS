@@ -9,6 +9,9 @@ procedure resetmask {
 function maskblock(x1, y1, x2, y2: word; state: boolean): boolean {
     adds a rectangular area to mask
 };
+function mputpixel(x, y: word; color: byte): boolean {
+    sets color of pixel at `x` and `y` to `color`
+};
 function hline(x1, x2, y: word; color: byte): boolean {
     draws a horizontal line from point (x1, y) to point (x2, y) with `color`
 };
@@ -122,6 +125,21 @@ asm
     @fail_maskblock:
         mov al, 0            {return false}
     @finish_maskblock:
+end;
+
+function mputpixel(x, y: word; color: byte): boolean {
+    Sets color of pixel at `x` and `y` to `color`;
+    returns boolean value of success
+};
+begin
+    mputpixel := false;
+    if (x <= getmaxx) and (y <= getmaxy) then begin
+        x := y shl 8 + y shl 6 + x; {320 * y + x}
+        if screen_mask^[x] <> 0 then begin
+           mem[$A000:x] := color;
+           mputpixel := true;
+        end;
+    end;
 end;
 
 function hline(x1, x2, y: word; color: byte): boolean {
