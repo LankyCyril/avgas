@@ -1,18 +1,23 @@
 {$A-,B-,D-,E-,F-,G+,I-,L-,N-,O-,P-,Q-,R-,S-,T-,V-,X+,Y-}
-UNIT PALETTES;
+UNIT PALETTES {
+    Implements several color palettes and provides functions to
+    load and display them.
+    Also implements function `fadepalette()` which darkens or washes out
+    current active palette.
+};
 
 INTERFACE
 
 type Palette216 = array[0..647] of byte;
 
-procedure showpalette {
-    displays the current 216 color palette in a grid
-};
 procedure fadepalette(const smoothing: byte) {
     darkens / washes out current palette
 };
 procedure setpalette(const palette: Palette216) {
     sets the 216 palette to values stored in `palette`
+};
+procedure showpalette {
+    displays the current 216 color palette in a grid
 };
 
 type PaletteCollection = record
@@ -230,17 +235,6 @@ IMPLEMENTATION
 
 uses graphics, shapes;
 
-procedure showpalette;
-var x, y: word;
-    color: byte;
-begin
-    for color := 16 to 231 do begin
-        x := (color - 16) mod 18 * 14 + 34;
-        y := (color - 16) div 18 * 14 + 16;
-        block(x, y, x+12, y+12, color);
-    end;
-end;
-
 procedure fadepalette(const smoothing: byte); assembler {
     Darkens / washes out current palette
 };
@@ -261,25 +255,40 @@ asm
         jb  @loop_fade
 end;
 
-procedure setpalette(const palette: Palette216); assembler;
+procedure setpalette(const palette: Palette216); assembler {
+    Sets the 216 palette to values stored in `palette`
+};
 asm
-    push ds          {DS is used by LDS, preserve value for after we're done}
-    cld              {clear direction flag, auto-advance `palette` on read}
-    lds  si, palette {make [ds:si] point to `palette`}
-    mov  bx, 16      {start with first extended color}
-    @iterate:
+    push ds              {DS will be overwritten by LDS}
+    cld                  {clear DF, auto-advance arrays on read}
+    lds  si, palette     {point [DS:SI] to `palette`}
+    mov  bl, 16          {start with first extended color}
+    @loop_setcolor:
         lodsb            {load next byte from `palette` into AL}
-        mov   dh, al     {dh = red}
+        mov   dh, al     {DH = red}
         lodsb            {load next byte from `palette` into AL}
-        mov   ch, al     {ch = green}
+        mov   ch, al     {CH = green}
         lodsb            {load next byte from `palette` into AL}
-        mov   cl, al     {cl = blue}
-        mov   ax, 1010h  {set RGB of color #bl (#bx)}
+        mov   cl, al     {CL = blue}
+        mov   ax, 1010h  {set RGB of color #BL}
         int   10h
-        add   bx, 1      {proceed to next color}
-        cmp   bx, 232
-    jl @iterate
-    pop  ds          {restore DS}
+        add   bl, 1      {proceed to next color}
+        cmp   bl, 232
+        jb @loop_setcolor
+    pop  ds              {restore DS}
+end;
+
+procedure showpalette {
+    Displays the current 216 color palette in a grid
+};
+var x, y: word;
+    color: byte;
+begin
+    for color := 16 to 231 do begin
+        x := (color - 16) mod 18 * 14 + 34;
+        y := (color - 16) div 18 * 14 + 16;
+        block(x, y, x+12, y+12, color);
+    end;
 end;
 
 end.
