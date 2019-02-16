@@ -14,7 +14,7 @@ function block(x1, y1, x2, y2: word; color: byte): boolean {
 procedure resetmask {
     resets mask
 };
-procedure maskblock(x1, y1, x2, y2: word; state: boolean) {
+function maskblock(x1, y1, x2, y2: word; state: boolean): boolean {
     adds a rectangular area to mask
 };
 
@@ -98,7 +98,7 @@ begin
     end;
 end;
 
-procedure maskblock(x1, y1, x2, y2: word; state: boolean); assembler {
+function maskblock(x1, y1, x2, y2: word; state: boolean): boolean; assembler {
     Adds a rectangular area to mask
 };
 asm
@@ -106,6 +106,9 @@ asm
     cmp  ax, getmaxx         {if x1 > getmaxx, mask is null}
         ja @nomask
     mov  bx, x2
+    cmp  bx, getmaxx         {if x2 > getmaxx, need to cap it}
+        ja @set_bx_to_getmaxx
+        @bx_is_getmaxx:
     cmp  ax, bx              {if x1 > x2, mask is null}
         ja @nomask
 
@@ -113,6 +116,9 @@ asm
     cmp  cx, getmaxy         {if y1 > getmaxy, mask is null}
         ja @nomask
     mov  dx, y2
+    cmp  dx, getmaxy         {if y2 > getmaxy, need to cap it}
+        ja @set_dx_to_getmaxy
+        @dx_is_getmaxy:
     cmp  cx, dx              {if y1 > y2, mask is null}
         ja @nomask
 
@@ -144,7 +150,24 @@ asm
         jnz  @loop_maskblock_y
 
     pop  es
+    mov  al, 255             {return true}
+    jmp @finish_maskblock
+
+    @set_bx_to_getmaxx:
+        cmp  al, 255         {if function already successful}
+            jmp @finish_maskblock
+        mov  bx, getmaxx
+        jmp  @bx_is_getmaxx
+
+    @set_dx_to_getmaxy:
+        cmp  al, 255         {if function already successful}
+            jmp @finish_maskblock
+        mov  dx, getmaxy
+        jmp  @dx_is_getmaxy
+
     @nomask:
+        mov al, 0            {return false}
+    @finish_maskblock:
 end;
 
 end.
