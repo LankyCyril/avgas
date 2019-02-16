@@ -21,7 +21,7 @@ function maskblock(x1, y1, x2, y2: word; state: boolean): boolean {
     adds a rectangular area to mask
 };
 function mputpixel(x, y: word; color: byte): boolean {
-    sets color of pixel at `x` and `y` to `color`, dodging mask; SLOW!
+    sets color of pixel at `x` and `y` to `color`, dodging mask
 };
 function hline(x1, x2, y: word; color: byte): boolean {
     draws a horizontal line from point (x1, y) to point (x2, y) with `color`
@@ -138,19 +138,45 @@ asm
     @finish_maskblock:
 end;
 
-function mputpixel(x, y: word; color: byte): boolean {
-    Sets color of pixel at `x` and `y` to `color`, dodging mask; SLOW!;
+function mputpixel(x, y: word; color: byte): boolean; assembler {
+    Sets color of pixel at `x` and `y` to `color`, dodging mask;
     returns boolean value of success
 };
-begin
-    mputpixel := false;
-    if (x <= getmaxx) and (y <= getmaxy) then begin
-        x := y shl 8 + y shl 6 + x; {320 * y + x}
-        if screen_mask^[x] <> 0 then begin
-           mem[$A000:x] := color;
-           mputpixel := true;
-        end;
-    end;
+asm
+    mov ax, x
+    cmp ax, getmaxx
+        ja @fail_mputpixel
+    mov bx, y
+    cmp bx, getmaxy
+        ja @fail_mputpixel
+
+    shl bx, 6
+    mov di, bx
+    shl di, 2
+    add di, bx
+    add di, ax
+
+    push ds
+    lds  si, screen_mask
+    add  si, di
+    mov  ah, [ds:si]
+    pop  ds
+    cmp  ah, 0
+        je @fail_mputpixel
+
+    push es
+    mov  ax, 0A000h
+    mov  es, ax
+    mov  bl, color
+    mov  [es:di], bl
+    pop  es
+
+    mov al, 1
+    jmp @finish_mputpixel
+
+    @fail_mputpixel:
+        mov al, 0
+    @finish_mputpixel:
 end;
 
 function hline(x1, x2, y: word; color: byte): boolean {
