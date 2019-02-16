@@ -10,7 +10,7 @@ UNIT SHAPES {
       * maskblock([coords], false) frees up the block.
     Calling `resetmask` again clears mask and allows all pixels to be
     written to.
-    Currently compiles under 16-bit Turbo Pascal to just 1424 bytes!
+    Currently compiles under 16-bit Turbo Pascal to just 1232 bytes!
 };
 
 INTERFACE
@@ -24,11 +24,8 @@ function maskblock(x1, y1, x2, y2: word; state: boolean): boolean {
 function mputpixel(x, y: word; color: byte): boolean {
     sets color of pixel at `x` and `y` to `color`, dodging mask
 };
-function hline(x1, x2, y: word; color: byte): boolean {
-    draws a horizontal line from point (x1, y) to point (x2, y) with `color`
-};
-function vline(x, y1, y2: word; color: byte): boolean {
-    draws a vertical line from point (x, y1) to point (x, y2) with `color`
+function line(x1, y1, x2, y2: word; color: byte): boolean {
+    draws a line from point (x1, y1) to point (x2, y2) with `color`
 };
 function block(x1, y1, x2, y2: word; color: byte): boolean {
     draws a filled rectangle of `color` from point (x1, y1) to point (x2, y2)
@@ -168,87 +165,88 @@ asm
     @finish_mputpixel:
 end;
 
-function hline(x1, x2, y: word; color: byte): boolean; assembler {
-    Draws a horizontal line from point (x1, y) to point (x2, y) with `color`;
+function line(x1, y1, x2, y2: word; color: byte): boolean; assembler {
+    Draws a line from point (x1, y1) to point (x2, y2) with `color`;
     returns false if completely out of bounds, true otherwise.
 };
 asm
     push ds
     push es
 
-    mov dx, y
+    mov ax, x1
+    mov bx, x2
+    cmp ax, bx
+        jna @ltr_line
+    xchg ax, bx
+    @ltr_line:
+
+    mov cx, y1
+    mov dx, y2
+    cmp cx, dx
+        jna @ttb_line
+    xchg cx, dx
+    @ttb_line:
+
+    cmp ax, getmaxx
+        ja @fail_line
+    cmp cx, getmaxy
+        ja @fail_line
+
+    cmp bx, getmaxx
+        jna @rtl_inbounds_line
+    mov bx, getmaxx
+    @rtl_inbounds_line:
+
     cmp dx, getmaxy
-        ja @fail_hline
+        jna @ttb_inbounds_line
+    mov dx, getmaxy
+    @ttb_inbounds_line:
 
-    mov  bx, x1
-    mov  cx, x2
-    cmp  bx, cx
-        jna @forward_hline
-    xchg bx, cx
+    cmp ax, bx
+        je @line_vertical
+    cmp cx, dx
+        je @line_horizontal
 
-    @forward_hline:
-        cmp bx, getmaxx
-            ja @fail_hline
-        cmp cx, getmaxx
-            jna @valid_hline
-        mov cx, getmaxx
+    @line_diagonal:
+    @line_vertical:
+        jmp @fail_line
 
-    @valid_hline:
-        sub cx, bx  {BX = x1, CX = width, DX = y}
-        add cx, 1   {width is inclusive!}
-        shl dx, 6
-        mov di, dx
+    @line_horizontal:
+        sub bx, ax {AX = x1, BX = width, CX = y}
+        add bx, 1  {width is inclusive!}
+        shl cx, 6
+        mov di, cx
         shl di, 2
-        add di, dx
-        add di, bx  {point DI to offset of line's first pixel}
-        add cx, di  {CX = offset of line's last pixel}
-        sub di, 1   {move back one step, for easier checks in @loop_hline}
+        add di, cx
+        add di, ax {point DI to offset of line's first pixel}
+        add bx, di {BX = offset of line's last pixel}
+        sub di, 1  {move back one step, for easier checks in @loop_hline}
 
         lds si, screen_mask
         add si, di {point [DS:SI] to 1b before line's 1st pixel in mask}
 
-        mov ax, 0A000h
-        mov es, ax {point [ES:DI] to 1b before line's 1st pixel on screen}
+        mov dx, 0A000h
+        mov es, dx {point [ES:DI] to 1b before line's 1st pixel on screen}
 
-        mov al, 1
-        mov bl, color
+        mov al, 1  {prepare to return true}
+        mov dl, color
 
         @loop_hline:
-            inc di
-            inc si
-            cmp cx, si
-                je @finish_hline
-            mov ah, [ds:si]
-            cmp ah, 0
+            inc di          {advance screen}
+            inc si          {advance mask}
+            cmp bx, si      {finish if arrived at offset of last pixel}
+                je @finish_line
+            mov dh, [ds:si] {check mask at offset}
+            cmp dh, 0       {skip pixel if mask at offset is zero}
                 je @loop_hline
-            mov [es:di], bl
+            mov [es:di], dl {put pixel otherwise}
             jmp @loop_hline
 
-    @fail_hline:
-        mov al, 0
-    @finish_hline:
+    @fail_line:
+        mov al, 0  {return false}
+    @finish_line:
         pop es
         pop ds
-end;
-
-function vline(x, y1, y2: word; color: byte): boolean {
-    Draws a vertical line from point (x, y1) to point (x, y2) with `color`;
-    returns false if y1 > y2 or if completely out of bounds, true otherwise.
-};
-var length, yd, startmem: word;
-begin
-    vline := true;
-    if (y1 > y2) or (x > getmaxx) or (y1 > getmaxy) then
-        vline := false
-    else begin
-        if y2 > getmaxy then
-            length := getmaxy - y1 + 1
-        else
-            length := y2 - y1 + 1;
-        startmem := y1 shl 8 + y1 shl 6 + x;
-        for yd := 0 to length do
-            mem[$A000: startmem + yd shl 8 + yd shl 6] := color;
-    end;
 end;
 
 function block(x1, y1, x2, y2: word; color: byte): boolean {
@@ -262,7 +260,7 @@ begin
     if (x1 > x2) or (y1 > y2) or (x1 > getmaxx) or (y1 > getmaxy) then
         block := false
     else for y := y1 to y2 do
-        hline(x1, x2, y, color);
+        line(x1, y, x2, y, color);
 end;
 
 end.
