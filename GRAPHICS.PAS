@@ -45,6 +45,7 @@ procedure resetcolors; assembler {
 asm
     mov bx, 16        {start with color 16}
     @loop_resetcolors:
+
         mov ax, bx    {dividend}
         sub ax, 16
         mov dl, 6     {divisor}
@@ -54,7 +55,7 @@ asm
         div dl
         mov ch, ah    {move remainder to green register}
         mov dh, al    {move quotient to red register}
-        {now exponentiate red}
+
         mov dl, cl    {CL is used for SHL, but we'll need it later}
         mov cl, dh
         add cl, 1
@@ -62,7 +63,7 @@ asm
         shl dh, cl
         sub dh, 2     {DH = 1 SHL (DH + 1) - 2}
         mov cl, dl    {restore rescued value of CL}
-        {now exponentiate green}
+
         mov dl, cl    {CL is used for SHL, but we'll need it later}
         mov cl, ch
         add cl, 1
@@ -70,14 +71,16 @@ asm
         shl ch, cl
         sub ch, 2     {CH = 1 SHL (CH + 1) - 2}
         mov cl, dl    {restore rescued value of CL}
-        {now exponentiate blue}
+
         add cl, 1
         mov dl, 1     {CL is used for SHL, so we calculate in unused DL}
         shl dl, cl
         sub dl, 2
         mov cl, dl    {CL = 1 SHL (CL + 1) - 2}
+
         mov ax, 1010h {set RGB color of #BL (#BX)}
         int 10h
+
         add bx, 1     {proceed to next color}
         cmp bx, 232   {until all 216 colors filled}
         jl @loop_resetcolors
@@ -96,9 +99,11 @@ asm
     mov bl, 0                {start with first color}
     cmp boolstate, 0
     je  @set_textmode
+
     @set_graphmode:
         mov  ax, 13h         {set 320x200x256 graphics mode}
         int  10h
+
         push es              {ES will be overwritten by LES}
         les  di, pal_ptr     {point [ES:DI] to `vga_palette`}
         @loop_copyaway:      {fill `vga_palette` with VGA palette}
@@ -111,6 +116,7 @@ asm
             add   bl, 1      {proceed to next color}
             cmp   bl, 255    {until all colors 0..255 processed}
             jne   @loop_copyaway
+
         les   di, rgb_ptr    {point [ES:DI] to `rgb`}
         mov   al, 16         {start with first extended color}
         @loop_fillrgb:
@@ -119,8 +125,10 @@ asm
             cmp   al, 232    {until all extended colors processed}
             jb    @loop_fillrgb
         pop   es
+
         call  resetcolors
         jmp   @finish_graphmode
+
     @set_textmode:
         push ds              {DS will be overwritten by LDS}
         lds  si, pal_ptr     {point [DS:SI] to `vga_palette`}
@@ -137,6 +145,7 @@ asm
         pop  ds              {restore DS}
         mov  ax, 3           {set 80x25x16 text mode}
         int  10h
+
     @finish_graphmode:
 end;
 
