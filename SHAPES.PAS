@@ -241,7 +241,7 @@ asm
                 je @finish_line
             mov bh, [ds:si] {check mask at offset}
             cmp bh, 0       {skip pixel if mask at offset is zero}
-                je @loop_vline
+                jz @loop_vline
             mov [es:di], bl {put pixel otherwise}
             jmp @loop_vline
 
@@ -272,7 +272,7 @@ asm
                 je @finish_line
             mov dh, [ds:si] {check mask at offset}
             cmp dh, 0       {skip pixel if mask at offset is zero}
-                je @loop_hline
+                jz @loop_hline
             mov [es:di], dl {put pixel otherwise}
             jmp @loop_hline
 
@@ -348,14 +348,13 @@ asm
             inc si
             inc di
             dec bx
-            cmp bx, 0
-                je  @endloop_block_x
+                jz @endloop_block_x
             mov ah, [ds:si]
             cmp ah, 0
-                je @loop_block_x
+                jz @loop_block_x
             mov [es:di], al
             cmp bx, 0
-            ja  @loop_block_x
+                ja @loop_block_x
         @endloop_block_x:
         pop bx
         add si, 320
@@ -363,8 +362,7 @@ asm
         add di, 320
         sub di, bx
         dec dx
-        cmp dx, 0
-        ja @loop_block_y
+        jnz @loop_block_y
 
     mov al, 1      {prepare to return true}
     jmp @finish_block
