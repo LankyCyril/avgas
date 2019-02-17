@@ -150,14 +150,20 @@ asm
     int 21h
 end;
 
-procedure callfunc; assembler;
+function callfunc: byte; assembler;
 asm
-    mov dl, 'U'
+    mov dl, 'W'
     mov dh, 0
     push dx
-    mov dl, 'H'
+    mov dl, 'T'
+    push dx
+    mov dl, 'F'
     push dx
     call calledfunc
+    pop dx
+    mov al, dl
+    mov ah, 2
+    int 21h
 end;
 
 begin
