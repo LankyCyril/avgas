@@ -8,7 +8,11 @@ begin
     graphmode(true);
     for x := 0 to getmaxx do
         for y := 0 to getmaxy do
-            putpixel(x, y, rgb[x div 54, y div 34, 0]);
+            putpixel(x, y, rgb[
+                x * 16 div (y + 1) mod 5,
+                y * 2 div (320 - x) mod 4,
+                (x*y) div 200 mod 5
+            ]);
     readln;
     resetmask;
     block(32, 14, 286, 184, 15);
@@ -30,7 +34,7 @@ begin
     readln;
     for x := 0 to getmaxx do
         for y := 0 to getmaxy do
-            mputpixel(x, y, rgb[x mod 6, y mod 6, (x+y) mod 6]);
+            mputpixel(x, y, 3);
     readln;
     fillscreen(rgb[2,0,2]);
     readln;
