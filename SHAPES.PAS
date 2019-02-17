@@ -10,7 +10,7 @@ UNIT SHAPES {
       * maskblock([coords], false) frees up the block.
     Calling `resetmask` again clears mask and allows all pixels to be
     written to.
-    Currently compiles under 16-bit Turbo Pascal to just 1328 bytes!
+    Currently compiles under 16-bit Turbo Pascal to just 1376 bytes!
 };
 
 INTERFACE
@@ -211,13 +211,13 @@ asm
         jmp @fail_line
 
     @line_vertical:
-        sub dx, cx  {CX = y1, DX = height, BX = x}
+        sub dx, cx  {CX = y1, DX = height, AX = x}
         add dx, 1   {height is inclusive!}
         shl cx, 6
         mov di, cx
         shl di, 2
         add di, cx
-        add di, bx  {point DI to offset of line's first pixel}
+        add di, ax  {point DI to offset of line's first pixel}
         shl dx, 6
         mov ax, dx
         shl dx, 2
@@ -228,8 +228,8 @@ asm
         lds si, screen_mask
         add si, di  {point [DS:SI] to 320b before line's 1st pixel in mask}
 
-        mov bx, 0A000h
-        mov es, bx  {point [ES:DI] to 320b before line's 1st pixel on screen}
+        mov ax, 0A000h
+        mov es, ax  {point [ES:DI] to 320b before line's 1st pixel on screen}
 
         mov al, 1   {prepare to return true}
         mov bl, color
@@ -259,8 +259,8 @@ asm
         lds si, screen_mask
         add si, di {point [DS:SI] to 1b before line's 1st pixel in mask}
 
-        mov dx, 0A000h
-        mov es, dx {point [ES:DI] to 1b before line's 1st pixel on screen}
+        mov ax, 0A000h
+        mov es, ax {point [ES:DI] to 1b before line's 1st pixel on screen}
 
         mov al, 1  {prepare to return true}
         mov dl, color
@@ -283,18 +283,97 @@ asm
         pop ds
 end;
 
-function block(x1, y1, x2, y2: word; color: byte): boolean {
+function block(x1, y1, x2, y2: word; color: byte): boolean; assembler {
     Draws a filled rectangle of `color` from point (x1, y1) to point (x2, y2);
     returns false if has negative dimensions or completely out of bounds;
     otherwise, returns true.
 };
-var y: word;
-begin
-    block := true;
-    if (x1 > x2) or (y1 > y2) or (x1 > getmaxx) or (y1 > getmaxy) then
-        block := false
-    else for y := y1 to y2 do
-        line(x1, y, x2, y, color);
+asm
+    push ds
+    push es
+
+    mov ax, x1
+    mov bx, x2
+    cmp ax, bx
+        jna @ltr_block
+    xchg ax, bx
+    @ltr_block:
+
+    mov cx, y1
+    mov dx, y2
+    cmp cx, dx
+        jna @ttb_block
+    xchg cx, dx
+    @ttb_block:
+
+    cmp ax, getmaxx
+        ja @fail_block
+    cmp cx, getmaxy
+        ja @fail_block
+
+    cmp bx, getmaxx
+        jna @rtl_inbounds_block
+    mov bx, getmaxx
+    @rtl_inbounds_block:
+
+    cmp dx, getmaxy
+        jna @ttb_inbounds_block
+    mov dx, getmaxy
+    @ttb_inbounds_block:
+
+    sub dx, cx  {CX = y1, DX = height}
+    add dx, 1   {height is inclusive!}
+
+    shl cx, 6
+    mov di, cx
+    shl di, 2
+    add di, cx
+    add di, ax  {point DI to offset of line's first pixel}
+
+    sub bx, ax  {BX = width}
+    add bx, 2   {width is inclusive! + extra byte for retracing in loop}
+    dec di      {point DI to 1b before offset of line's 1st pixel}
+
+    lds si, screen_mask
+    add si, di  {point [DS:SI] to 1b before line's first pixel in mask}
+
+    mov ax, 0A000h
+    mov es, ax  {point [ES:DI] to 1b before line's first pixel on screen}
+
+    mov al, color
+
+    @loop_block_y:
+        push bx
+        @loop_block_x:
+            inc si
+            inc di
+            dec bx
+            cmp bx, 0
+                je  @endloop_block_x
+            mov ah, [ds:si]
+            cmp ah, 0
+                je @loop_block_x
+            mov [es:di], al
+            cmp bx, 0
+            ja  @loop_block_x
+        @endloop_block_x:
+        pop bx
+        add si, 320
+        sub si, bx
+        add di, 320
+        sub di, bx
+        dec dx
+        cmp dx, 0
+        ja @loop_block_y
+
+    mov al, 1      {prepare to return true}
+    jmp @finish_block
+
+    @fail_block:
+        mov al, 0  {return false}
+    @finish_block:
+        pop es
+        pop ds
 end;
 
 end.
