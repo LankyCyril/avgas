@@ -253,28 +253,28 @@ asm
         shl di, 2
         add di, cx
         add di, ax {point DI to offset of line's first pixel}
-        add bx, di {BX = offset of line's last pixel}
-        dec di     {move back one step, for easier checks in @loop_hline}
 
+        cld
         lds si, screen_mask
         add si, di {point [DS:SI] to 1b before line's 1st pixel in mask}
 
         mov ax, 0A000h
         mov es, ax {point [ES:DI] to 1b before line's 1st pixel on screen}
 
-        mov al, 1  {prepare to return true}
         mov dl, color
 
         @loop_hline:
-            inc di          {advance screen}
-            inc si          {advance mask}
-            cmp bx, si      {finish if arrived at offset of last pixel}
-                je @finish_line
-            mov dh, [ds:si] {check mask at offset}
-            cmp dh, 0       {skip pixel if mask at offset is zero}
-                jz @loop_hline
+            lodsb
+            cmp al, 0
+                jz @skip_hline_pixel
             mov [es:di], dl {put pixel otherwise}
-            jmp @loop_hline
+            @skip_hline_pixel:
+                inc di
+            dec bx
+                jnz @loop_hline
+
+    mov al, 1      {prepare to return true}
+    jmp @finish_line
 
     @fail_line:
         mov al, 0  {return false}
