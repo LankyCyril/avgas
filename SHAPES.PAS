@@ -336,7 +336,6 @@ asm
 
     mov ax, 0A000h
     mov es, ax  {point [ES:DI] to line's first pixel on screen}
-
     mov cl, color
     cld
 
@@ -348,19 +347,19 @@ asm
             lodsb
             cmp ah, 0
                 jz @skip_pixel_in_block
-            mov [es:di], cl
+                mov [es:di], cl
             @skip_pixel_in_block:
-            inc di
+                inc di
             dec bx
-                ja @loop_block_x
+                jnz @loop_block_x
         @endloop_block_x:
-        pop bx
-        add si, 320
-        sub si, bx
-        add di, 320
-        sub di, bx
-        dec dx
-        jnz @loop_block_y
+            pop bx
+            add si, 320
+            sub si, bx
+            add di, 320
+            sub di, bx
+            dec dx
+                jnz @loop_block_y
 
     mov al, 1      {prepare to return true}
     jmp @finish_block
