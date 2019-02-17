@@ -10,7 +10,7 @@ UNIT SHAPES {
       * maskblock([coords], false) frees up the block.
     Calling `resetmask` again clears mask and allows all pixels to be
     written to.
-    Currently compiles under 16-bit Turbo Pascal to just 1344 bytes!
+    Currently compiles under 16-bit Turbo Pascal to just 1520 bytes!
 };
 
 INTERFACE
@@ -407,9 +407,13 @@ asm
     push di
 
     call line
+    mov  ah, al
     call line
+    or   ah, al
     call line
+    or   ah, al
     call line
+    or   al, ah
 end;
 
 end.
