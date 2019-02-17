@@ -372,13 +372,44 @@ asm
         pop ds
 end;
 
-function rectangle(x1, y1, x2, y2: word; color: byte): boolean {
+function rectangle(x1, y1, x2, y2: word; color: byte): boolean; assembler {
+    Draws a rectangle from (x1, y1) to (x2, y2) with `color`;
 };
-begin
-    line(x1, y1, x2, y1, color);
-    line(x2, y1, x2, y2, color);
-    line(x2, y2, x1, y2, color);
-    line(x1, y2, x1, y1, color);
+asm
+    mov ax, x1
+    mov bx, x2
+    mov cx, y1
+    mov dx, y2
+    mov di, word(color)
+
+    push ax
+    push cx
+    push bx
+    push cx
+    push di
+
+    push bx
+    push cx
+    push bx
+    push dx
+    push di
+
+    push bx
+    push dx
+    push ax
+    push dx
+    push di
+
+    push ax
+    push dx
+    push ax
+    push cx
+    push di
+
+    call line
+    call line
+    call line
+    call line
 end;
 
 end.
