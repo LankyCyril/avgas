@@ -6,6 +6,10 @@ begin
     write('Keep pressing <ENTER>');
     readln;
     graphmode(true);
+    for x := 0 to getmaxx do
+        for y := 0 to getmaxy do
+            putpixel(x, y, rgb[x div 54, y div 34, 0]);
+    readln;
     resetmask;
     block(32, 14, 286, 184, 15);
     block(33, 15, 285, 183, 0);
@@ -26,7 +30,7 @@ begin
     readln;
     for x := 0 to getmaxx do
         for y := 0 to getmaxy do
-            mputpixel(x, y, rgb[x div 54, y div 29, 0]);
+            mputpixel(x, y, rgb[x mod 6, y mod 6, (x+y) mod 6]);
     readln;
     fillscreen(rgb[2,0,2]);
     readln;
