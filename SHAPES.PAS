@@ -10,7 +10,7 @@ UNIT SHAPES {
       * maskblock([coords], false) frees up the block.
     Calling `resetmask` again clears mask and allows all pixels to be
     written to.
-    Currently compiles under 16-bit Turbo Pascal to just 1376 bytes!
+    Currently compiles under 16-bit Turbo Pascal to just 1360 bytes!
 };
 
 INTERFACE
@@ -321,8 +321,10 @@ asm
     mov dx, getmaxy
     @ttb_inbounds_block:
 
+    sub bx, ax  {BX = width}
+    inc bx      {width is inclusive!}
     sub dx, cx  {CX = y1, DX = height}
-    add dx, 1   {height is inclusive!}
+    inc dx      {height is inclusive!}
 
     shl cx, 6
     mov di, cx
@@ -330,30 +332,27 @@ asm
     add di, cx
     add di, ax  {point DI to offset of line's first pixel}
 
-    sub bx, ax  {BX = width}
-    add bx, 2   {width is inclusive! + extra byte for retracing in loop}
-    dec di      {point DI to 1b before offset of line's 1st pixel}
-
     lds si, screen_mask
-    add si, di  {point [DS:SI] to 1b before line's first pixel in mask}
+    add si, di  {point [DS:SI] to line's first pixel in mask}
 
     mov ax, 0A000h
-    mov es, ax  {point [ES:DI] to 1b before line's first pixel on screen}
+    mov es, ax  {point [ES:DI] to line's first pixel on screen}
 
-    mov al, color
+    mov cl, color
+    cld
 
     @loop_block_y:
         push bx
         @loop_block_x:
-            inc si
+            cmp bx, 0
+                jz @endloop_block_x
+            lodsb
+            cmp ah, 0
+                jz @skip_pixel_in_block
+            mov [es:di], cl
+            @skip_pixel_in_block:
             inc di
             dec bx
-                jz @endloop_block_x
-            mov ah, [ds:si]
-            cmp ah, 0
-                jz @loop_block_x
-            mov [es:di], al
-            cmp bx, 0
                 ja @loop_block_x
         @endloop_block_x:
         pop bx
