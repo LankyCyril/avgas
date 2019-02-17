@@ -10,7 +10,7 @@ UNIT SHAPES {
       * maskblock([coords], false) frees up the block.
     Calling `resetmask` again clears mask and allows all pixels to be
     written to.
-    Currently compiles under 16-bit Turbo Pascal to just 1360 bytes!
+    Currently compiles under 16-bit Turbo Pascal to just 1344 bytes!
 };
 
 INTERFACE
@@ -87,9 +87,9 @@ asm
         ja @fail_maskblock
 
     sub dx, cx               {CX = mask x1, DX = mask width}
-    add dx, 1                {width is inclusive!}
+    inc dx                   {width is inclusive!}
     sub bx, ax               {AX = mask y1, BX = mask height}
-    add bx, 1                {height is inclusive!}
+    inc bx                   {height is inclusive!}
 
     push es
     cld                      {clear DF, auto-advance arrays on write}
@@ -107,12 +107,12 @@ asm
         push dx
         @loop_maskblock_x:
             stosb            {put AH into [ES:DI] and advance (INC DI)}
-            sub  dx, 1       {until width of current horizontal line}
+            dec  dx          {until width of current horizontal line}
             jnz  @loop_maskblock_x
         pop  dx              {rescue width for next line}
         sub  di, dx          {move pointer left along mask (carriage return)}
         add  di, 320         {move pointer down along mask (new line)}
-        sub  bx, 1           {until height of current block}
+        dec  bx              {until height of current block}
         jnz  @loop_maskblock_y
 
     pop es
@@ -212,7 +212,7 @@ asm
 
     @line_vertical:
         sub dx, cx  {CX = y1, DX = height, AX = x}
-        add dx, 1   {height is inclusive!}
+        inc dx      {height is inclusive!}
         shl cx, 6
         mov di, cx
         shl di, 2
@@ -247,14 +247,14 @@ asm
 
     @line_horizontal:
         sub bx, ax {AX = x1, BX = width, CX = y}
-        add bx, 1  {width is inclusive!}
+        inc bx     {width is inclusive!}
         shl cx, 6
         mov di, cx
         shl di, 2
         add di, cx
         add di, ax {point DI to offset of line's first pixel}
         add bx, di {BX = offset of line's last pixel}
-        sub di, 1  {move back one step, for easier checks in @loop_hline}
+        dec di     {move back one step, for easier checks in @loop_hline}
 
         lds si, screen_mask
         add si, di {point [DS:SI] to 1b before line's 1st pixel in mask}
