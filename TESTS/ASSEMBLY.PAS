@@ -140,8 +140,28 @@ asm
     pop ds
 end;
 
+procedure calledfunc(c, d: char); assembler;
+asm
+    mov ah, 2
+    mov dl, c
+    int 21h
+    mov ah, 2
+    mov dl, d
+    int 21h
+end;
+
+procedure callfunc; assembler;
+asm
+    mov dl, 'U'
+    mov dh, 0
+    push dx
+    mov dl, 'H'
+    push dx
+    call calledfunc
+end;
+
 begin
     clrscr;
-    iter_array(a239, 3);
+    callfunc;
     readln;
 end.
