@@ -11,30 +11,24 @@ begin
     block(33, 15, 285, 183, 0);
     showpalette;
     maskblock(32, 14, 286, 184, true);
-    line(350, 100, 10, 100, 15);
-    write('Showcase default palette');
+    line(310, 99, 10, 99, 15);
+    line(159, 10, 159, 190, 15);
     readln;
     for x := 1 to 4 do begin
-        write('Fade the 216 colors ', x, ' times');
         fadepalette(0);
         readln;
     end;
     resetcolors;
-    write('Restore the 216 colors');
     readln;
     setpalette(palette.vaporwave);
-    write('Vaporwave palette');
     readln;
     setpalette(palette.outrun);
-    write('Outrun palette');
     readln;
     for x := 0 to getmaxx do
         for y := 0 to getmaxy do
             mputpixel(x, y, rgb[x div 54, y div 29, 0]);
-    write('mputpixel: avoid masked region');
     readln;
     fillscreen(rgb[2,0,2]);
-    write('Fill screen with extended purple');
     readln;
     graphmode(false);
     write('Press <ENTER> to exit');

@@ -208,8 +208,42 @@ asm
         je @line_horizontal
 
     @line_diagonal:
-    @line_vertical:
         jmp @fail_line
+
+    @line_vertical:
+        sub dx, cx  {CX = y1, DX = height, BX = x}
+        add dx, 1   {height is inclusive!}
+        shl cx, 6
+        mov di, cx
+        shl di, 2
+        add di, cx
+        add di, bx  {point DI to offset of line's first pixel}
+        shl dx, 6
+        mov ax, dx
+        shl dx, 2
+        add dx, ax
+        add dx, di  {DX = offset of line's last pixel}
+        sub di, 320 {move back up one step, for easier looping conditions}
+
+        lds si, screen_mask
+        add si, di  {point [DS:SI] to 320b before line's 1st pixel in mask}
+
+        mov bx, 0A000h
+        mov es, bx  {point [ES:DI] to 320b before line's 1st pixel on screen}
+
+        mov al, 1   {prepare to return true}
+        mov bl, color
+
+        @loop_vline:
+            add di, 320     {advance screen, one line down}
+            add si, 320     {advance mask, one line down}
+            cmp dx, si      {finish if arrived at offset of last pixel}
+                je @finish_line
+            mov bh, [ds:si] {check mask at offset}
+            cmp bh, 0       {skip pixel if mask at offset is zero}
+                je @loop_vline
+            mov [es:di], bl {put pixel otherwise}
+            jmp @loop_vline
 
     @line_horizontal:
         sub bx, ax {AX = x1, BX = width, CX = y}
