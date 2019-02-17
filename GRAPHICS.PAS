@@ -149,17 +149,37 @@ asm
     @finish_graphmode:
 end;
 
-function putpixel(x, y: word; color: byte): boolean {
+function putpixel(x, y: word; color: byte): boolean; assembler {
     Sets color of pixel at `x` and `y` to `color`;
     returns boolean value of success
 };
-begin
-    if (x <= getmaxx) and (y <= getmaxy) then begin
-        mem[$A000: y shl 8 + y shl 6 + x {320 * y + x}] := color;
-        putpixel := true;
-    end
-    else
-        putpixel := false;
+asm
+    mov ax, x
+    cmp ax, getmaxx
+        ja @fail_putpixel
+    mov bx, y
+    cmp bx, getmaxy
+        ja @fail_putpixel
+
+    shl bx, 6
+    mov di, bx
+    shl di, 2
+    add di, bx
+    add di, ax
+
+    push es
+    mov  ax, 0A000h
+    mov  es, ax
+
+    mov bl, color
+    mov [es:di], bl
+    mov al, 1
+    pop es
+    jmp @finish_putpixel
+
+    @fail_putpixel:
+        mov al, 0
+    @finish_putpixel:
 end;
 
 function getpixel(x, y: word; var color: byte): boolean {
