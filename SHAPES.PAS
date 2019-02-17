@@ -92,6 +92,7 @@ asm
     add bx, 1                {height is inclusive!}
 
     push es
+    cld                      {clear DF, auto-advance arrays on write}
     les  di, screen_mask     {point [ES:DI] to screen_mask^[0]}
     shl  ax, 6
     add  di, ax              {point [ES:DI] to screen_mask^[y1 * 64]}
@@ -105,8 +106,7 @@ asm
     @loop_maskblock_y:
         push dx
         @loop_maskblock_x:
-            mov  [es:di], ah
-            add  di, 1       {move pointer right along mask}
+            stosb            {put AH into [ES:DI] and advance (INC DI)}
             sub  dx, 1       {until width of current horizontal line}
             jnz  @loop_maskblock_x
         pop  dx              {rescue width for next line}
