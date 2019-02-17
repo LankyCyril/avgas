@@ -1,4 +1,4 @@
-{$A-,B-,D-,E-,F-,G+,I-,L-,N-,O-,P-,Q-,R-,S-,T-,V-,X+,Y-}
+{$A-,B-,D-,E-,F-,G+,I-,L-,N-,O-,P-,Q-,R-,S-,T-,V-,X-,Y-}
 UNIT SHAPES {
     Defines functions that draw shapes (lines, rectangles, etc).
     Introduces a mask, which must be set to 255 first (`resetmask`):
@@ -211,39 +211,39 @@ asm
         jmp @fail_line
 
     @line_vertical:
-        sub dx, cx  {CX = y1, DX = height, AX = x}
-        inc dx      {height is inclusive!}
+        sub dx, cx {CX = y1, DX = height, AX = x}
+        inc dx     {height is inclusive!}
         shl cx, 6
         mov di, cx
         shl di, 2
         add di, cx
-        add di, ax  {point DI to offset of line's first pixel}
+        add di, ax {point DI to offset of line's first pixel}
         shl dx, 6
         mov ax, dx
         shl dx, 2
         add dx, ax
-        add dx, di  {DX = offset of line's last pixel}
-        sub di, 320 {move back up one step, for easier looping conditions}
+        add dx, di {DX = offset of line's last pixel}
 
         lds si, screen_mask
-        add si, di  {point [DS:SI] to 320b before line's 1st pixel in mask}
+        add si, di {point [DS:SI] to line's 1st pixel in mask}
 
         mov ax, 0A000h
-        mov es, ax  {point [ES:DI] to 320b before line's 1st pixel on screen}
-
-        mov al, 1   {prepare to return true}
+        mov es, ax {point [ES:DI] to line's 1st pixel on screen}
         mov bl, color
 
         @loop_vline:
-            add di, 320     {advance screen, one line down}
-            add si, 320     {advance mask, one line down}
-            cmp dx, si      {finish if arrived at offset of last pixel}
-                je @finish_line
-            mov bh, [ds:si] {check mask at offset}
-            cmp bh, 0       {skip pixel if mask at offset is zero}
-                jz @loop_vline
-            mov [es:di], bl {put pixel otherwise}
-            jmp @loop_vline
+            mov bh, [ds:si]     {check mask at offset}
+            cmp bh, 0           {skip pixel if mask at offset is zero}
+                jz  @skip_vline_pixel
+                mov [es:di], bl {put pixel otherwise}
+            @skip_vline_pixel:
+                add di, 320     {advance screen, one line down}
+                add si, 320     {advance mask, one line down}
+            cmp si, dx          {finish if arrived at offset of last pixel}
+                jb @loop_vline
+
+        mov al, 1  {prepare to return true}
+        jmp @finish_line
 
     @line_horizontal:
         sub bx, ax {AX = x1, BX = width, CX = y}
@@ -254,27 +254,26 @@ asm
         add di, cx
         add di, ax {point DI to offset of line's first pixel}
 
-        cld
         lds si, screen_mask
-        add si, di {point [DS:SI] to 1b before line's 1st pixel in mask}
+        add si, di {point [DS:SI] to line's 1st pixel in mask}
 
         mov ax, 0A000h
-        mov es, ax {point [ES:DI] to 1b before line's 1st pixel on screen}
-
+        mov es, ax {point [ES:DI] to line's 1st pixel on screen}
         mov dl, color
+        cld
 
         @loop_hline:
             lodsb
             cmp al, 0
-                jz @skip_hline_pixel
-            mov [es:di], dl {put pixel otherwise}
+                jz  @skip_hline_pixel
+                mov [es:di], dl {put pixel otherwise}
             @skip_hline_pixel:
                 inc di
             dec bx
                 jnz @loop_hline
 
-    mov al, 1      {prepare to return true}
-    jmp @finish_line
+        mov al, 1  {prepare to return true}
+        jmp @finish_line
 
     @fail_line:
         mov al, 0  {return false}

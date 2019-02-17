@@ -16,7 +16,7 @@ begin
     showpalette;
     maskblock(32, 14, 286, 184, true);
     line(310, 99, 10, 99, 15);
-    line(159, 10, 159, 190, 15);
+    line(159, 0, 159, 199, 15);
     readln;
     for x := 1 to 4 do begin
         fadepalette(0);
