@@ -1,4 +1,4 @@
-{$A-,B-,D-,E-,F-,G+,I-,L-,N-,O-,P-,Q-,R-,S-,T-,V-,X-,Y-}
+{$A-,B-,D-,E-,F-,G+,I-,L-,N-,O-,P-,Q-,R-,S-,T-,V-,X+,Y-}
 UNIT SHAPES {
     Defines functions that draw shapes (lines, rectangles, etc).
     Introduces a mask, which must be set to 255 first (`resetmask`):
@@ -30,6 +30,7 @@ function line(x1, y1, x2, y2: word; color: byte): boolean {
 function block(x1, y1, x2, y2: word; color: byte): boolean {
     draws a filled rectangle of `color` from point (x1, y1) to point (x2, y2)
 };
+function rectangle(x1, y1, x2, y2: word; color: byte): boolean {};
 
 IMPLEMENTATION
 
@@ -369,6 +370,15 @@ asm
     @finish_block:
         pop es
         pop ds
+end;
+
+function rectangle(x1, y1, x2, y2: word; color: byte): boolean {
+};
+begin
+    line(x1, y1, x2, y1, color);
+    line(x2, y1, x2, y2, color);
+    line(x2, y2, x1, y2, color);
+    line(x1, y2, x1, y1, color);
 end;
 
 end.

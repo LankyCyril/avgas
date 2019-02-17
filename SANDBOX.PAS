@@ -15,7 +15,7 @@ begin
             ]);
     readln;
     resetmask;
-    block(32, 14, 286, 184, 15);
+    rectangle(32, 14, 286, 184, 15);
     block(33, 15, 285, 183, 0);
     showpalette;
     maskblock(32, 14, 286, 184, true);
