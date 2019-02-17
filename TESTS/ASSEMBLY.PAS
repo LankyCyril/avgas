@@ -140,7 +140,7 @@ asm
     pop ds
 end;
 
-procedure calledfunc(c, d: char); assembler;
+function calledfunc(c, d: char): boolean; assembler;
 asm
     mov ah, 2
     mov dl, c
@@ -148,20 +148,17 @@ asm
     mov ah, 2
     mov dl, d
     int 21h
+    mov al, '?'
 end;
 
 function callfunc: byte; assembler;
 asm
-    mov dl, 'W'
-    mov dh, 0
-    push dx
     mov dl, 'T'
     push dx
     mov dl, 'F'
     push dx
     call calledfunc
-    pop dx
-    mov al, dl
+    mov dl, al
     mov ah, 2
     int 21h
 end;
